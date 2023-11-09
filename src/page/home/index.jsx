@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ActionIcon, Avatar, Box, Button, CloseButton, Divider, Drawer, Grid, Group, Input, NumberInput, Text, Title } from "@mantine/core";
-import { IconEdit, IconMinus, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
+import { IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { useForm } from "@mantine/form";
 import { v4 as uuidv4 } from 'uuid';
@@ -25,9 +25,6 @@ export default function Home() {
 
   const [mate, setMate] = useState();
   const [me, setMe] = useState();
-
-  // const [mates, setMates] = useState([]);
-  // const [bills, setBills] = useState([]);
 
   useEffect(() => {
     if (mates.length == 0) {

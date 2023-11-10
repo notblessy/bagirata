@@ -8,6 +8,8 @@ import App from './App.jsx';
 import { MantineProvider, createTheme } from '@mantine/core';
 import { BrowserRouter } from 'react-router-dom';
 import { Notifications } from '@mantine/notifications';
+import { SWRConfig } from "swr";
+import { fetcher } from "./libs/utils/api";
 
 const myColor = [
   '#fff0e4',
@@ -33,7 +35,14 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <MantineProvider theme={theme}>
       <Notifications position="top-center" />
       <BrowserRouter>
-        <App />
+        <SWRConfig
+          value={{
+            refreshInterval: 0,
+            fetcher,
+          }}
+        >
+          <App />
+        </SWRConfig>
       </BrowserRouter>
     </MantineProvider>
   </React.StrictMode>,

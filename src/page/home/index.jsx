@@ -7,12 +7,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { useBills } from "../../libs/hooks/bill";
 import { useMates } from "../../libs/hooks/mate";
 import { notifications } from "@mantine/notifications";
+import { useNavigate } from "react-router-dom";
 
 function generateID() {
-  return `id_${uuidv4()}`;
+  return uuidv4()
 }
 
 export default function Home() {
+  const navigate = useNavigate();
+
   const [opened, { open, close }] = useDisclosure(false);
   const [nameOpened, { open: nameOpen, close: nameClose }] = useDisclosure(false);
   const [editOpened, { open: editOpen, close: editClose }] = useDisclosure(false);
@@ -21,10 +24,11 @@ export default function Home() {
 
   const m = mates?.find((m) => m.me === true)
 
-  const [bills, setBills] = useBills(m?.id, [])
+  const { data: bills, onUpsert, onDelete } = useBills({ ownerID: m?.id })
 
   const [mate, setMate] = useState();
   const [me, setMe] = useState();
+  const [billID, setBillID] = useState();
 
   useEffect(() => {
     if (mates.length == 0) {
@@ -86,14 +90,15 @@ export default function Home() {
 
   const form = useForm({
     initialValues: {
-      itemName: '',
-      quantity: 0,
+      name: '',
+      owner_id: '',
+      qty: 0,
       price: 0,
     },
 
     validate: {
-      itemName: (value) => value == "" ? "empty form" : null,
-      quantity: (value) => value < 1 ? "not a number" : null,
+      name: (value) => value == "" ? "empty form" : null,
+      qty: (value) => value < 1 ? "not a number" : null,
       price: (value) => value < 1 ? "not a number" : null,
     },
   });
@@ -101,14 +106,15 @@ export default function Home() {
   const editForm = useForm({
     initialValues: {
       id: '',
-      itemName: '',
-      quantity: 0,
+      owner_id: '',
+      name: '',
+      qty: 0,
       price: 0,
     },
 
     validate: {
-      itemName: (value) => value == "" ? "empty form" : null,
-      quantity: (value) => value < 1 ? "not a number" : null,
+      name: (value) => value == "" ? "empty form" : null,
+      qty: (value) => value < 1 ? "not a number" : null,
       price: (value) => value < 1 ? "not a number" : null,
     },
   });
@@ -152,36 +158,21 @@ export default function Home() {
   const handleAddBill = (bill) => {
     bill.id = generateID()
 
-    bills.push(bill)
-    setBills(bills)
+    onUpsert({ id: bill.id, owner_id: m.id, name: bill.name, qty: +bill.qty, price: +bill.price })
     close()
     form.reset()
-
-    notifications.show({
-      title: "Success",
-      message: "Success adding bill",
-      color: "#7CE69F",
-    });
   }
 
   const handleUpdate = (bill) => {
     if (bill.id != "") {
-      console.log(bills)
-      const newBills = bills.filter((b) => b.id !== bill.id)
-
-      console.log(newBills)
-
-      newBills.push(bill)
-      setBills(newBills)
+      onUpsert({ id: bill.id, owner_id: m.id, name: bill.name, qty: +bill.qty, price: +bill.price })
       editClose()
-      form.reset()
-
-      notifications.show({
-        title: "Success",
-        message: "Success updating bill",
-        color: "#7CE69F",
-      });
+      editForm.reset()
     }
+  }
+
+  const handleContinue = () => {
+    navigate(m.id)
   }
 
   return (
@@ -239,16 +230,16 @@ export default function Home() {
                   <React.Fragment key={b.id}>
                     <Grid mb={20}>
                       <Grid.Col span={12} pb={0}>
-                        <Text fz={18} fw={600} c="#161617">{b.itemName}</Text>
+                        <Text fz={18} fw={600} c="#161617">{b.name}</Text>
                       </Grid.Col>
                       <Grid.Col span={4} m="auto 0" pt={0}>
                         <Text fz={14} fw={400} c="dimmed">{`Rp ${b.price.toLocaleString()}`}</Text>
                       </Grid.Col>
                       <Grid.Col span={2} m="auto 0" pt={0}>
-                        <Text fz={12} fw={600} c="#161617" >{`x${b.quantity}`}</Text>
+                        <Text fz={12} fw={600} c="#161617" >{`x${b.qty}`}</Text>
                       </Grid.Col>
                       <Grid.Col span={4} pt={0} align="right" m="auto 0">
-                        <Text fz={14} fw={600} c="#161617">{`Rp ${(b.price * b.quantity).toLocaleString()}`}</Text>
+                        <Text fz={14} fw={600} c="#161617">{`Rp ${(b.price * b.qty).toLocaleString()}`}</Text>
                       </Grid.Col>
                       <Grid.Col span={2} align="right" m="auto 0">
                         <ActionIcon
@@ -258,7 +249,8 @@ export default function Home() {
                           variant="light"
                           aria-label="add-mate"
                           onClick={() => {
-                            editForm.setValues({ id: b.id, itemName: b.itemName, quantity: b.quantity, price: b.price })
+                            editForm.setValues({ id: b.id, name: b.name, qty: b.qty, price: b.price })
+                            setBillID(b.id)
                             editOpen()
                           }}
                         >
@@ -278,7 +270,7 @@ export default function Home() {
           }
           <Group grow>
             <Button onClick={open} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Add Bill</Button>
-            <Button radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
+            <Button onClick={handleContinue} disabled={!m?.id ?? true} radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
           </Group>
         </Box>
         <Drawer
@@ -304,7 +296,10 @@ export default function Home() {
               color="#F06418"
               variant="filled"
               onClick={() => {
-                setMates([...mates, { id: generateID(), name: me, me: true }])
+                const id = generateID()
+                setMates([...mates, { id: id, name: me, me: true }])
+                form.setFieldValue('owner_id', id)
+                editForm.setFieldValue('owner_id', id)
                 setMe("")
                 nameClose()
               }}
@@ -329,7 +324,7 @@ export default function Home() {
                 radius={0}
                 placeholder="Item name"
                 required
-                {...form.getInputProps('itemName')}
+                {...form.getInputProps('name')}
               />
               <Group grow style={{ alignItems: 'flex-start' }}>
                 <Box>
@@ -338,7 +333,7 @@ export default function Home() {
                     radius={0}
                     placeholder="Quantity"
                     required
-                    {...form.getInputProps('quantity')}
+                    {...form.getInputProps('qty')}
                   />
                 </Box>
                 <Box>
@@ -381,7 +376,7 @@ export default function Home() {
                 radius={0}
                 placeholder="Item name"
                 required
-                {...editForm.getInputProps('itemName')}
+                {...editForm.getInputProps('name')}
               />
               <Group grow style={{ alignItems: 'flex-start' }}>
                 <Box>
@@ -390,7 +385,7 @@ export default function Home() {
                     radius={0}
                     placeholder="Quantity"
                     required
-                    {...editForm.getInputProps('quantity')}
+                    {...editForm.getInputProps('qty')}
                   />
                 </Box>
                 <Box>
@@ -421,15 +416,9 @@ export default function Home() {
                   color="#F06418"
                   variant="light"
                   onClick={() => {
-                    const filtered = bills.filter(item => item.id !== editForm.values.id)
-                    setBills(filtered)
+                    onDelete(billID)
                     editClose()
-
-                    notifications.show({
-                      title: "Success",
-                      message: "Success deleting bill",
-                      color: "#7CE69F",
-                    });
+                    setBillID('')
                   }}
                 >
                   Delete

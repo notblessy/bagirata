@@ -4,10 +4,10 @@ import useSWR, { mutate } from "swr";
 import api from "../utils/api";
 import { notifications } from "@mantine/notifications";
 
-export const useBills = ({ ownerID }) => {
+export const useBills = ({ ownerID, mateID }) => {
   const [loading, setLoading] = useState(false);
 
-  const pathKey = `v1/bills?owner_id=${ownerID}`;
+  const pathKey = `v1/bills?owner_id=${ownerID}&mate_id=${mateID}`;
   const { data, error, isValidating } = useSWR(pathKey);
 
   const onUpsert = useCallback(
@@ -77,10 +77,40 @@ export const useBills = ({ ownerID }) => {
     [pathKey]
   );
 
+  const onAddShare = useCallback(
+    async (data) => {
+      try {
+        setLoading(true);
+
+        const { data: res } = await api.post(`/v1/shares?type=${data.type ? data.type : "ADD"}`, data);
+
+        if (res.message === "success") {
+          mutate(pathKey);
+        } else {
+          notifications.show({
+            title: "Error",
+            message: res.message,
+            color: "red",
+          });
+        }
+      } catch (error) {
+        notifications.show({
+          title: "Error",
+          message: "Something went wrong",
+          color: "red",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pathKey]
+  );
+
   return {
     data: data ? data : [],
     onUpsert,
     onDelete,
+    onAddShare,
     loading: loading || (!error && !data) || isValidating,
   };
 };

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { ActionIcon, Avatar, Box, Button, CloseButton, Divider, Drawer, Grid, Group, Input, NumberInput, Text, Title } from "@mantine/core";
 import { IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
-import { useForm } from "@mantine/form";
+import { isEmail, useForm } from "@mantine/form";
 import { v4 as uuidv4 } from 'uuid';
 import { useBills } from "../../libs/hooks/bill";
 import { useMates } from "../../libs/hooks/mate";
@@ -20,26 +20,24 @@ export default function Home() {
   const [nameOpened, { open: nameOpen, close: nameClose }] = useDisclosure(false);
   const [editOpened, { open: editOpen, close: editClose }] = useDisclosure(false);
 
-  const [mates, setMates] = useMates([]);
+  const { data: user, acronym, onRegister, onAddMate, loading } = useMates();
 
-  const m = mates?.find((m) => m.me === true)
-
-  const { data: bills, onUpsert, onDelete } = useBills({ ownerID: m?.id })
+  const { data: bills, onUpsert, onDelete } = useBills({ ownerID: user?.id })
 
   const [mate, setMate] = useState();
-  const [me, setMe] = useState();
   const [billID, setBillID] = useState();
 
   useEffect(() => {
-    if (mates.length == 0) {
+    if (!user?.mates) {
       nameOpen();
     } else {
       nameClose()
     }
-  }, [mates])
 
-  const mateItems = mates?.map((m) => {
-    const splitted = m?.name.split(" ")
+  }, [user])
+
+  const mateItems = user?.mates?.map((m) => {
+    const splitted = m?.user_detail?.name.split(" ")
 
     let acr = ''
     if (splitted.length == 1) {
@@ -55,38 +53,42 @@ export default function Home() {
     return (
       <Box key={m.id} style={{ position: 'relative' }}>
         {
-          !m.me ?
-            <ActionIcon
-              style={{ position: 'absolute', left: '30px' }}
-              color="#F06418"
-              radius="xl"
-              size="xs"
-              variant="filled"
-              aria-label="remove-mate"
-              onClick={() => {
-                if (m.me) {
-                  return
-                }
-
-                const filtered = mates.filter(item => item.id !== m.id)
-                setMates(filtered)
-
-                notifications.show({
-                  title: "Success",
-                  message: "Success deleting mate",
-                  color: "#7CE69F",
-                });
-              }}
-            >
-              <IconX stroke={1.5} />
-            </ActionIcon>
-            :
-            null
+          <ActionIcon
+            style={{ position: 'absolute', left: '30px' }}
+            color="#F06418"
+            radius="xl"
+            size="xs"
+            variant="filled"
+            aria-label="remove-mate"
+            onClick={() => {
+              onDelete(m.id)
+              notifications.show({
+                title: "Success",
+                message: "Success deleting mate",
+                color: "#7CE69F",
+              });
+            }}
+          >
+            <IconX stroke={1.5} />
+          </ActionIcon>
         }
         <Avatar size={45} src={null} color="#F06418">{acr}</Avatar>
       </Box>
     )
   })
+
+  const userForm = useForm({
+    initialValues: {
+      id: '',
+      name: '',
+      email: '',
+    },
+
+    validate: {
+      name: (value) => value == "" ? "empty form" : null,
+      email: isEmail('Invalid email'),
+    },
+  });
 
   const form = useForm({
     initialValues: {
@@ -120,28 +122,14 @@ export default function Home() {
   });
 
   const handleAddMate = () => {
-    if (mates != "" && mate?.length > 0) {
-      setMates([...mates, { id: generateID(), name: mate, me: false }])
-      setMate("")
+    if (mate !== "") {
+      onAddMate({
+        id: generateID(),
+        owner_id: user.id,
+        name: mate,
+      })
 
-      notifications.show({
-        title: "Success",
-        message: "Success adding mate",
-        color: "#7CE69F",
-      });
-
-      return
-    }
-
-    if (mates != "" && mate?.length > 0) {
-      setMates([...mates, { id: generateID(), name: mate, me: true }])
-      setMate("")
-
-      notifications.show({
-        title: "Success",
-        message: "Success adding mate",
-        color: "#7CE69F",
-      });
+      setMate('')
 
       return
     }
@@ -155,24 +143,31 @@ export default function Home() {
     return
   }
 
+  const handleRegister = (user) => {
+    onRegister({ id: generateID(), name: user.name, email: user.email })
+    nameClose()
+
+    userForm.reset()
+  }
+
   const handleAddBill = (bill) => {
     bill.id = generateID()
 
-    onUpsert({ id: bill.id, owner_id: m.id, name: bill.name, qty: +bill.qty, price: +bill.price })
+    onUpsert({ id: bill.id, owner_id: user.id, name: bill.name, qty: +bill.qty, price: +bill.price })
     close()
     form.reset()
   }
 
   const handleUpdate = (bill) => {
     if (bill.id != "") {
-      onUpsert({ id: bill.id, owner_id: m.id, name: bill.name, qty: +bill.qty, price: +bill.price })
+      onUpsert({ id: bill.id, owner_id: user.id, name: bill.name, qty: +bill.qty, price: +bill.price })
       editClose()
       editForm.reset()
     }
   }
 
   const handleContinue = () => {
-    navigate(m.id)
+    navigate(user?.id)
   }
 
   return (
@@ -214,11 +209,14 @@ export default function Home() {
         </Grid>
       </Box>
       <Group mt={10} gap="xs" style={{ padding: '10px 0' }}>
+        <Box style={{ position: 'relative' }}>
+          <Avatar size={45} src={null} color="#F06418">{acronym}</Avatar>
+        </Box>
         {
-          mateItems.length > 0 ?
+          mateItems?.length > 0 ?
             mateItems
             :
-            <Text>No Mates</Text>
+            null
         }
       </Group>
       <Box>
@@ -270,7 +268,7 @@ export default function Home() {
           }
           <Group grow>
             <Button onClick={open} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Add Bill</Button>
-            <Button onClick={handleContinue} disabled={!m?.id ?? true} radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
+            <Button onClick={handleContinue} disabled={!user?.id ?? true} radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
           </Group>
         </Box>
         <Drawer
@@ -282,30 +280,37 @@ export default function Home() {
         >
           <Box style={{ maxWidth: '480px', margin: '0 auto' }}>
             <Title order={3} mb={20}>What is your name?</Title>
-            <Input
-              pb={10}
-              radius={0}
-              placeholder="Your name"
-              onChange={(event) => setMe(event.currentTarget.value)}
-            />
-            <Button
-              radius={0}
-              mt={15}
-              size="sm"
-              fullWidth
-              color="#F06418"
-              variant="filled"
-              onClick={() => {
-                const id = generateID()
-                setMates([...mates, { id: id, name: me, me: true }])
-                form.setFieldValue('owner_id', id)
-                editForm.setFieldValue('owner_id', id)
-                setMe("")
-                nameClose()
-              }}
-            >
-              Submit
-            </Button>
+            <form onSubmit={userForm.onSubmit(handleRegister)}>
+              <Text>Name</Text>
+              <Input
+                pb={10}
+                radius={0}
+                placeholder="Your name"
+                required
+                {...userForm.getInputProps('name')}
+
+              />
+              <Text>Email</Text>
+              <Input
+                pb={10}
+                radius={0}
+                placeholder="Your email"
+                required
+                {...userForm.getInputProps('email')}
+              />
+              <Button
+                radius={0}
+                mt={15}
+                size="sm"
+                fullWidth
+                color="#F06418"
+                variant="filled"
+                loading={loading}
+                type="submit"
+              >
+                Submit
+              </Button>
+            </form>
           </Box>
         </Drawer>
         <Drawer
@@ -353,6 +358,7 @@ export default function Home() {
                 fullWidth
                 color="#F06418"
                 variant="filled"
+                loading={loading}
                 type="submit"
               >
                 Add
@@ -405,6 +411,7 @@ export default function Home() {
                   size="sm"
                   color="#F06418"
                   variant="filled"
+                  loading={loading}
                   type="submit"
                 >
                   Update

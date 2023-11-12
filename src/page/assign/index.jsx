@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ActionIcon, Avatar, Box, Button, Divider, Grid, Group, Text, Title, UnstyledButton } from "@mantine/core";
 import { IconMinus, IconPlus } from "@tabler/icons-react";
 import { useBills } from "../../libs/hooks/bill";
@@ -8,17 +8,26 @@ import { useNavigate } from "react-router-dom";
 export default function Assign() {
   const navigate = useNavigate();
 
-  const [mates,] = useMates([]);
+  const { data: user, acronym } = useMates();
 
-  const m = mates?.find((m) => m.me === true)
+  const [mate, setMate] = useState();
 
-  const [mate, setMate] = useState(m);
+  useEffect(() => {
+    if (user) {
+      setMate({
+        id: user?.id,
+        name: user?.name,
+        me: true,
+      })
+    }
+  }, [user])
 
 
-  const { data: bills, onAddShare } = useBills({ ownerID: m?.id, mateID: mate?.id ? mate?.id : '' })
+  const mateID = mate?.me ? mate?.id : mate?.user_detail?.id ? mate?.user_detail?.id : ''
+  const { data: bills, onAddShare } = useBills({ ownerID: user?.id, mateID: mateID })
 
-  const mateItems = mates?.map((m) => {
-    const splitted = m?.name.split(" ")
+  const mateItems = user?.mates?.map((m) => {
+    const splitted = m?.user_detail.name.split(" ")
 
     let acr = ''
     if (splitted.length == 1) {
@@ -35,12 +44,12 @@ export default function Assign() {
       <UnstyledButton
         key={m.id}
         onClick={() => {
-          if (mate?.id === m.id) {
+          if (mate?.user_detail?.id === m?.user_detail?.id) {
             setMate(null)
             return
           }
 
-          setMate(m)
+          setMate({ ...m, me: false })
         }}
         style={{ position: 'relative' }}
       >
@@ -48,7 +57,7 @@ export default function Assign() {
           size={45}
           src={null}
           color="#F06418"
-          variant={mate?.id === m.id ? "filled" : "light"}
+          variant={mate?.user_detail?.id === m?.user_detail?.id ? "filled" : "light"}
         >
           {acr}
         </Avatar>
@@ -56,8 +65,8 @@ export default function Assign() {
     )
   })
 
-  const handleContinue = () => {
-    console.log("continue")
+  const handleSplit = () => {
+    // navigate(`${m.id}/split`)
   }
 
   return (
@@ -65,6 +74,26 @@ export default function Assign() {
       <Text c="#F06418" fz={12} fw={600}>Bagi Rata</Text>
       <Title order={1} c="#161617">Assign Mates</Title>
       <Group mt={10} gap="xs" style={{ padding: '10px 0' }}>
+        <UnstyledButton
+          onClick={() => {
+            if (mate?.me) {
+              setMate(null)
+              return
+            }
+
+            setMate({ ...user, me: true })
+          }}
+          style={{ position: 'relative' }}
+        >
+          <Avatar
+            size={45}
+            src={null}
+            color="#F06418"
+            variant={mate?.me ? "filled" : "light"}
+          >
+            {acronym}
+          </Avatar>
+        </UnstyledButton>
         {
           mateItems
         }
@@ -121,10 +150,10 @@ export default function Assign() {
                               onClick={() => {
                                 const share = {
                                   type: "SUB",
-                                  owner_id: m.id,
+                                  owner_id: user?.id,
                                   bill_id: b.id,
-                                  mate_id: mate.id,
-                                  mate_name: mate.name,
+                                  mate_id: mate.me ? mate?.id : mate?.user_detail?.id,
+                                  mate_name: mate.me ? mate?.name : mate?.user_detail?.name,
                                   qty: 1,
                                   price: +b.price
                                 }
@@ -144,10 +173,10 @@ export default function Assign() {
                               aria-label="add-mate"
                               onClick={() => {
                                 const share = {
-                                  owner_id: m.id,
+                                  owner_id: user?.id,
                                   bill_id: b.id,
-                                  mate_id: mate.id,
-                                  mate_name: mate.name,
+                                  mate_id: mate.me ? mate?.id : mate?.user_detail?.id,
+                                  mate_name: mate.me ? mate?.name : mate?.user_detail?.name,
                                   qty: 1,
                                   price: +b.price
                                 }
@@ -177,7 +206,7 @@ export default function Assign() {
           }
           <Group grow>
             <Button onClick={() => navigate("/")} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Back</Button>
-            <Button onClick={handleContinue} disabled={!m?.id ?? true} radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
+            <Button onClick={handleSplit} disabled={!user?.id ?? true} radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
           </Group>
         </Box>
       </Box >

@@ -107,10 +107,45 @@ export const useMates = () => {
     [setCookie]
   );
 
+  const onDelete = useCallback(
+    async (id) => {
+      try {
+        setLoading(true);
+
+        const { data: res } = await api.delete(`/v1/users/${id}/mate`);
+
+        if (res.message === "success") {
+          mutate(pathKey);
+          notifications.show({
+            title: "Success",
+            message: "Mate has deleted",
+            color: "blue",
+          });
+        } else {
+          notifications.show({
+            title: "Error",
+            message: res.message,
+            color: "red",
+          });
+        }
+      } catch (error) {
+        notifications.show({
+          title: "Error",
+          message: "Something went wrong",
+          color: "red",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pathKey]
+  );
+
   return {
     data: user,
     onRegister,
     onAddMate,
+    onDelete,
     acronym,
     loading
   };

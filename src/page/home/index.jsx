@@ -20,7 +20,7 @@ export default function Home() {
   const [nameOpened, { open: nameOpen, close: nameClose }] = useDisclosure(false);
   const [editOpened, { open: editOpen, close: editClose }] = useDisclosure(false);
 
-  const { data: user, acronym, onRegister, onAddMate, loading } = useMates();
+  const { data: user, acronym, onRegister, onAddMate, onDelete: onDeleteMate, loading } = useMates();
 
   const { data: bills, onUpsert, onDelete } = useBills({ ownerID: user?.id })
 
@@ -61,12 +61,7 @@ export default function Home() {
             variant="filled"
             aria-label="remove-mate"
             onClick={() => {
-              onDelete(m.id)
-              notifications.show({
-                title: "Success",
-                message: "Success deleting mate",
-                color: "#7CE69F",
-              });
+              onDeleteMate(m?.id)
             }}
           >
             <IconX stroke={1.5} />

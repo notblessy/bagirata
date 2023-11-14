@@ -44,7 +44,7 @@ export default function Assign() {
       <UnstyledButton
         key={m.id}
         onClick={() => {
-          if (mate?.user_detail?.id === m?.user_detail?.id) {
+          if (mate?.user_id === m?.user_id) {
             setMate(null)
             return
           }
@@ -110,15 +110,9 @@ export default function Assign() {
                   }, 0) : 0
 
                   const disableSubButton = () => {
-                    if (takenQty > 0 && b.taken >= b.qty) {
-                      return false
-                    }
-
-                    if (takenQty === 0 && b.taken >= b.qty) {
+                    if (takenQty === 0) {
                       return true
                     }
-
-                    return true
                   }
 
                   const disableAddButton = () => {

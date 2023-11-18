@@ -2,6 +2,7 @@ import { Route, Routes } from 'react-router-dom'
 import Home from './page/home'
 import AppContainer from './components/AppContainer'
 import Assign from './page/assign'
+import Split from './page/split'
 
 
 function App() {
@@ -10,7 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/:idBill" element={<Assign />} />
-        <Route path="/:ownerID" element="" />
+        <Route path="splits/:splitID" element={<Split />} />
       </Routes>
     </AppContainer>
   )

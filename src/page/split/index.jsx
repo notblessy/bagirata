@@ -1,12 +1,17 @@
 import React, { useEffect, useState } from "react";
-import { Box, Divider, Grid, Group, Text, Title, UnstyledButton } from "@mantine/core";
+import { Box, Button, Divider, Grid, Group, Text, Title, UnstyledButton } from "@mantine/core";
 import { useParams } from "react-router-dom";
 import { useSplit } from "../../libs/hooks/split";
 import { format } from "date-fns";
+import { notifications } from "@mantine/notifications";
+import { IconCopy } from "@tabler/icons-react";
 
 export default function Split() {
   const { splitID } = useParams()
+  const currentURL = window.location.href;
 
+  const [copied, setCopied] = useState()
+  const [copiedBank, setCopiedBank] = useState()
   const [date, setDate] = useState()
 
   const { data: split } = useSplit({ id: splitID });
@@ -52,34 +57,80 @@ export default function Split() {
     )
   })
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(currentURL)
+      .then(() => {
+        setCopied(true);
+        notifications.show({
+          title: "Success",
+          message: "Link copied to clipboard",
+          color: "cyan",
+        });
+        setTimeout(() => {
+          setCopied(false);
+        }, 1500);
+      })
+      .catch(err => {
+        console.error('Unable to copy to clipboard', err);
+      });
+  };
+
   return (
-    <Box mt={30} style={{ padding: '10px 20px' }}>
-      <Text c="#F06418" fz={12} fw={600}>Bagi Rata</Text>
-      <Title order={1} c="#161617">Split Bills</Title>
-      <Title order={5} c="#161617">{date}</Title>
-      <Box mt={20} style={{ padding: '10px 0' }}>
-        {
-          mateItems
-        }
+    <>
+      <Box pt={30} pb={10} px={20} style={{ background: '#FFF4EB' }}>
+        <Text c="#F06418" fz={12} fw={600}>Bagi Rata</Text>
+        <Title order={1} c="#161617">Split Bills</Title>
+        <Title order={5} c="#161617">{`${split?.owner_detail?.name} - ${date}`}</Title>
       </Box>
-      <Box>
-        <Title order={5} c="#161617">Transfer to:</Title>
-        <UnstyledButton mt={10} p={10} style={{ width: '100%', background: "#FFF0E4" }}>
+      <Box style={{ padding: '10px 20px' }}>
+        <Box style={{ padding: '10px 0' }}>
+          {
+            mateItems
+          }
+        </Box>
+        <Box>
+          <Title order={5} c="#161617">Transfer to:</Title>
           {
             split?.owner_detail?.user_banks?.map((b) => {
               return (
-                <>
+                <UnstyledButton
+                  key={b?.id}
+                  disabled={copiedBank}
+                  mt={10}
+                  p={10}
+                  style={{ width: '100%', border: '1px solid #eee' }}
+                  onClick={() => {
+                    navigator.clipboard.writeText(b?.bank_number)
+                      .then(() => {
+                        setCopiedBank(true);
+                        notifications.show({
+                          title: "Success",
+                          message: "Bank number copied to clipboard",
+                          color: "cyan",
+                        });
+                        setTimeout(() => {
+                          setCopiedBank(false);
+                        }, 1500);
+                      })
+                      .catch(err => {
+                        console.error('Unable to copy to clipboard', err);
+                      });
+                  }}
+                >
                   <Text fz={12} fw={800}>{b.bank_account}</Text>
-                  <Group>
-                    <Text fz={12}>{b.bank_name}</Text>
-                    <Text fz={12}>{b.bank_number}</Text>
+                  <Group gap={5}>
+                    <Text fz={12}>{`${b.bank_name} - ${b.bank_number}`}</Text>
+                    <IconCopy size={15} />
                   </Group>
-                </>
+                </UnstyledButton>
               )
             })
           }
-        </UnstyledButton>
-      </Box>
-    </Box >
+        </Box>
+        <Box>
+          <Button onClick={handleCopyLink} disabled={copied} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Share</Button>
+        </Box>
+      </Box >
+    </>
   )
 }

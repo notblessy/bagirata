@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ActionIcon, Avatar, Box, Button, CloseButton, Divider, Drawer, Grid, Group, Input, NumberInput, Text, Title } from "@mantine/core";
-import { IconPencil, IconPlus, IconX } from "@tabler/icons-react";
+import { IconMinus, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { isEmail, useForm } from "@mantine/form";
 import { v4 as uuidv4 } from 'uuid';
@@ -19,8 +19,9 @@ export default function Home() {
   const [opened, { open, close }] = useDisclosure(false);
   const [nameOpened, { open: nameOpen, close: nameClose }] = useDisclosure(false);
   const [editOpened, { open: editOpen, close: editClose }] = useDisclosure(false);
+  const [bankOpened, { open: bankOpen, close: bankClose }] = useDisclosure(false);
 
-  const { data: user, acronym, onRegister, onAddMate, onDelete: onDeleteMate, loading } = useMates();
+  const { data: user, acronym, onRegister, onAddMate, onDelete: onDeleteMate, onAddBank, onDeleteBank, loading } = useMates();
 
   const { data: bills, onUpsert, onDelete } = useBills({ ownerID: user?.id })
 
@@ -71,6 +72,20 @@ export default function Home() {
       </Box>
     )
   })
+
+  const bankForm = useForm({
+    initialValues: {
+      bank_name: '',
+      bank_account: '',
+      bank_number: '',
+    },
+
+    validate: {
+      bank_name: (value) => value == "" ? "empty form" : null,
+      bank_account: (value) => value == "" ? "empty form" : null,
+      bank_number: (value) => value == "" ? "empty form" : null,
+    },
+  });
 
   const userForm = useForm({
     initialValues: {
@@ -159,6 +174,13 @@ export default function Home() {
       editClose()
       editForm.reset()
     }
+  }
+
+  const handleCreateBank = (bank) => {
+    onAddBank({ owner_id: user?.id, bank_name: bank.bank_name, bank_account: bank.bank_account, bank_number: bank.bank_number })
+    bankClose()
+
+    userForm.reset()
   }
 
   const handleContinue = () => {
@@ -261,9 +283,50 @@ export default function Home() {
                 <Divider />
               </>
           }
+          <Box>
+            <Group>
+              <Title order={5} c="#161617">Transfer to:</Title>
+              <ActionIcon
+                onClick={() => bankOpen()}
+                radius={0}
+                size="sm"
+                color="#F06418"
+                variant="light"
+              >
+                <IconPlus style={{ padding: '2px' }} />
+              </ActionIcon>
+            </Group>
+            {
+              user?.user_banks?.length > 0 ?
+                user?.user_banks?.map((b) => {
+                  return (
+                    <Box
+                      key={b?.id}
+                      mt={10}
+                      p={10}
+                      style={{ width: '100%', border: '1px solid #eee' }}
+                    >
+                      <Group justify="space-between">
+                        <Box>
+                          <Text fz={12} fw={800}>{b.bank_account}</Text>
+                          <Group gap={5}>
+                            <Text fz={12}>{`${b.bank_name} - ${b.bank_number}`}</Text>
+                          </Group>
+                        </Box>
+                        <ActionIcon onClick={() => onDeleteBank(b.id)} radius={0} color="#F06418" variant="light"><IconMinus style={{ padding: '4px' }} /></ActionIcon>
+                      </Group>
+                    </Box>
+                  )
+                })
+                :
+                <Box m={15}>
+                  <Text ta='center' c='dimmed'>Please add bank to transfer</Text>
+                </Box>
+            }
+          </Box>
           <Group grow>
             <Button onClick={open} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Add Bill</Button>
-            <Button onClick={handleContinue} disabled={!user?.id ?? true} radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
+            <Button onClick={handleContinue} disabled={!user?.id || user?.user_banks?.length < 1 ? true : false} radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
           </Group>
         </Box>
         <Drawer
@@ -426,6 +489,56 @@ export default function Home() {
                   Delete
                 </Button>
               </Group>
+            </form>
+          </Box>
+        </Drawer>
+        <Drawer
+          overlayProps={{ color: '#f2f2f2', backgroundOpacity: 0.5, blur: 4 }}
+          opened={bankOpened}
+          onClose={bankClose}
+          position="bottom"
+          withCloseButton={false}
+        >
+          <Box style={{ maxWidth: '480px', margin: '0 auto' }}>
+            <Title order={3} mb={20}>Create Bank</Title>
+            <form onSubmit={bankForm.onSubmit(handleCreateBank)}>
+              <Text>Bank Name</Text>
+              <Input
+                pb={10}
+                radius={0}
+                placeholder="Bank name"
+                required
+                {...bankForm.getInputProps('bank_name')}
+
+              />
+              <Text>Bank Account</Text>
+              <Input
+                pb={10}
+                radius={0}
+                placeholder="Bank Account"
+                required
+                {...bankForm.getInputProps('bank_account')}
+              />
+              <Text>Bank Account</Text>
+              <Input
+                pb={10}
+                radius={0}
+                placeholder="Bank Number"
+                required
+                {...bankForm.getInputProps('bank_number')}
+              />
+              <Button
+                radius={0}
+                mt={15}
+                size="sm"
+                fullWidth
+                color="#F06418"
+                variant="filled"
+                loading={loading}
+                type="submit"
+              >
+                Submit
+              </Button>
             </form>
           </Box>
         </Drawer>

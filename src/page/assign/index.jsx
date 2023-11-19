@@ -8,22 +8,18 @@ import { useNavigate } from "react-router-dom";
 export default function Assign() {
   const navigate = useNavigate();
 
-  const { data: user, acronym } = useMates();
+  const { data: user } = useMates();
 
   const [mate, setMate] = useState();
 
   useEffect(() => {
     if (user) {
-      setMate({
-        id: user?.id,
-        name: user?.name,
-        me: true,
-      })
+      setMate(user?.mates[0])
     }
   }, [user])
 
 
-  const mateID = mate?.me ? mate?.id : mate?.user_detail?.id ? mate?.user_detail?.id : ''
+  const mateID = mate?.user_detail?.id ? mate?.user_detail?.id : ''
   const { data: bills, onAddShare } = useBills({ ownerID: user?.id, mateID: mateID })
 
   const mateItems = user?.mates?.map((m) => {
@@ -74,26 +70,6 @@ export default function Assign() {
       <Text c="#F06418" fz={12} fw={600}>Bagi Rata</Text>
       <Title order={1} c="#161617">Assign Mates</Title>
       <Group mt={10} gap="xs" style={{ padding: '10px 0' }}>
-        <UnstyledButton
-          onClick={() => {
-            if (mate?.me) {
-              setMate(null)
-              return
-            }
-
-            setMate({ ...user, me: true })
-          }}
-          style={{ position: 'relative' }}
-        >
-          <Avatar
-            size={45}
-            src={null}
-            color="#F06418"
-            variant={mate?.me ? "filled" : "light"}
-          >
-            {acronym}
-          </Avatar>
-        </UnstyledButton>
         {
           mateItems
         }
@@ -138,7 +114,7 @@ export default function Assign() {
                               disabled={disableSubButton()}
                               radius={0}
                               color="#F06418"
-                              size="36px"
+                              size="25px"
                               variant="light"
                               aria-label="add-mate"
                               onClick={() => {
@@ -146,8 +122,8 @@ export default function Assign() {
                                   type: "SUB",
                                   owner_id: user?.id,
                                   bill_id: b.id,
-                                  mate_id: mate.me ? mate?.id : mate?.user_detail?.id,
-                                  mate_name: mate.me ? mate?.name : mate?.user_detail?.name,
+                                  mate_id: mate?.user_detail?.id,
+                                  mate_name: mate?.user_detail?.name,
                                   qty: 1,
                                   price: +b.price
                                 }
@@ -155,22 +131,22 @@ export default function Assign() {
                                 onAddShare(share)
                               }}
                             >
-                              <IconMinus stroke={1.5} />
+                              <IconMinus style={{ padding: '4px' }} />
                             </ActionIcon>
                             <Text fz={12} fw={600} c="#161617">{`x${takenQty}`}</Text>
                             <ActionIcon
                               disabled={disableAddButton()}
                               radius={0}
                               color="#F06418"
-                              size="36px"
+                              size="25px"
                               variant="light"
                               aria-label="add-mate"
                               onClick={() => {
                                 const share = {
                                   owner_id: user?.id,
                                   bill_id: b.id,
-                                  mate_id: mate.me ? mate?.id : mate?.user_detail?.id,
-                                  mate_name: mate.me ? mate?.name : mate?.user_detail?.name,
+                                  mate_id: mate?.user_detail?.id,
+                                  mate_name: mate?.user_detail?.name,
                                   qty: 1,
                                   price: +b.price
                                 }
@@ -178,7 +154,7 @@ export default function Assign() {
                                 onAddShare(share)
                               }}
                             >
-                              <IconPlus stroke={1.5} />
+                              <IconPlus style={{ padding: '4px' }} />
                             </ActionIcon>
                           </Group>
                         </Grid.Col>

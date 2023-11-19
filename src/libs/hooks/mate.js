@@ -141,11 +141,79 @@ export const useMates = () => {
     [pathKey]
   );
 
+  const onAddBank = useCallback(
+    async (data) => {
+      setLoading(true);
+      try {
+        const { data: res } = await api.post(`/v1/banks`, data);
+        if (res.message === "success") {
+          mutate(pathKey)
+          notifications.show({
+            title: "Success",
+            message: "Bank has added!",
+            color: "blue",
+          });
+        } else {
+          notifications.show({
+            title: "Error",
+            message: "Something went wrong!",
+            color: "red",
+          });
+        }
+      } catch (error) {
+        notifications.show({
+          title: "Error",
+          message: error,
+          color: "red",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setCookie]
+  );
+
+  const onDeleteBank = useCallback(
+    async (id) => {
+      try {
+        setLoading(true);
+
+        const { data: res } = await api.delete(`/v1/banks/${id}`);
+
+        if (res.message === "success") {
+          mutate(pathKey);
+          notifications.show({
+            title: "Success",
+            message: "Bank has deleted",
+            color: "blue",
+          });
+        } else {
+          notifications.show({
+            title: "Error",
+            message: res.message,
+            color: "red",
+          });
+        }
+      } catch (error) {
+        notifications.show({
+          title: "Error",
+          message: "Something went wrong",
+          color: "red",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pathKey]
+  );
+
   return {
     data: user,
     onRegister,
     onAddMate,
+    onAddBank,
     onDelete,
+    onDeleteBank,
     acronym,
     loading
   };

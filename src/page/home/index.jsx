@@ -21,7 +21,7 @@ export default function Home() {
   const [editOpened, { open: editOpen, close: editClose }] = useDisclosure(false);
   const [bankOpened, { open: bankOpen, close: bankClose }] = useDisclosure(false);
 
-  const { data: user, acronym, onRegister, onAddMate, onDelete: onDeleteMate, onAddBank, onDeleteBank, loading } = useMates();
+  const { data: user, onRegister, onAddMate, onDelete: onDeleteMate, onAddBank, onDeleteBank, loading } = useMates();
 
   const { data: bills, onUpsert, onDelete } = useBills({ ownerID: user?.id })
 
@@ -54,19 +54,21 @@ export default function Home() {
     return (
       <Box key={m.id} style={{ position: 'relative' }}>
         {
-          <ActionIcon
-            style={{ position: 'absolute', left: '30px' }}
-            color="#F06418"
-            radius="xl"
-            size="xs"
-            variant="filled"
-            aria-label="remove-mate"
-            onClick={() => {
-              onDeleteMate(m?.id)
-            }}
-          >
-            <IconX stroke={1.5} />
-          </ActionIcon>
+          !m?.me ?
+            <ActionIcon
+              style={{ position: 'absolute', left: '30px' }}
+              color="#F06418"
+              radius="xl"
+              size="xs"
+              variant="filled"
+              aria-label="remove-mate"
+              onClick={() => {
+                onDeleteMate(m?.id)
+              }}
+            >
+              <IconX stroke={1.5} />
+            </ActionIcon>
+            : null
         }
         <Avatar size={45} src={null} color="#F06418">{acr}</Avatar>
       </Box>
@@ -226,9 +228,6 @@ export default function Home() {
         </Grid>
       </Box>
       <Group mt={10} gap="xs" style={{ padding: '10px 0' }}>
-        <Box style={{ position: 'relative' }}>
-          <Avatar size={45} src={null} color="#F06418">{acronym}</Avatar>
-        </Box>
         {
           mateItems?.length > 0 ?
             mateItems

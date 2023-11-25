@@ -48,11 +48,11 @@ export const useMates = () => {
         const { data: res } = await api.post("/v1/users", data);
         if (res.message === "success") {
           setCookie("userID", res?.data, { path: "/" });
-          getAcronym(data.name)
 
+          mutate(`/v1/users/${res?.data}`)
           notifications.show({
             title: "Success",
-            message: "You are registered!",
+            message: "You are authenticated!",
             color: "blue",
           });
         } else {
@@ -72,14 +72,14 @@ export const useMates = () => {
         setLoading(false);
       }
     },
-    [setCookie]
+    [setCookie, mutate]
   );
 
   const onAddMate = useCallback(
     async (data) => {
       setLoading(true);
       try {
-        const { data: res } = await api.post(`/v1/users/mates?owner_id=${data.owner_id}`, data);
+        const { data: res } = await api.post(`/ v1 / users / mates ? owner_id = ${data.owner_id}`, data);
         if (res.message === "success") {
           mutate(pathKey)
           notifications.show({
@@ -112,7 +112,7 @@ export const useMates = () => {
       try {
         setLoading(true);
 
-        const { data: res } = await api.delete(`/v1/users/${id}/mate`);
+        const { data: res } = await api.delete(`/ v1 / users / ${id} / mate`);
 
         if (res.message === "success") {
           mutate(pathKey);
@@ -145,9 +145,9 @@ export const useMates = () => {
     async (data) => {
       setLoading(true);
       try {
-        const { data: res } = await api.post(`/v1/banks`, data);
+        const { data: res } = await api.post(`/ v1 / banks`, data);
         if (res.message === "success") {
-          mutate(pathKey)
+          mutate(`/v1/bills?owner_id=${res?.id}`)
           notifications.show({
             title: "Success",
             message: "Bank has added!",
@@ -178,7 +178,7 @@ export const useMates = () => {
       try {
         setLoading(true);
 
-        const { data: res } = await api.delete(`/v1/banks/${id}`);
+        const { data: res } = await api.delete(`/ v1 / banks / ${id}`);
 
         if (res.message === "success") {
           mutate(pathKey);

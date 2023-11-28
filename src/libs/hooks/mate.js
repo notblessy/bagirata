@@ -5,39 +5,17 @@ import api from "../utils/api";
 import { notifications } from "@mantine/notifications";
 
 export const useMates = () => {
-  // eslint-disable-next-line no-unused-vars
+  //eslint-disable-next-line no-unused-vars
   const [cookies, setCookie, removeCookie] = useCookies(["bagirata"]);
 
   const [userID, setUserID] = useState(cookies.userID || "");
-  const [acronym, setAcronym] = useState('');
 
-  const pathKey = `/v1/users/${userID}`
-  const { data: user } = useSWR(() =>
-    userID ? pathKey : ""
-  );
-
-  const getAcronym = (name) => {
-    const splitted = name?.split(" ")
-
-    let acr = ''
-
-    if (splitted?.length == 1) {
-      acr = splitted[0].length > 2 ?
-        splitted[0].substring(0, 2).toUpperCase() :
-        splitted[0].toUpperCase();
-    } else {
-      acr = splitted?.map((word) => word[0]).
-        join('').
-        toUpperCase();
-    }
-
-    setAcronym(acr)
-  }
+  const pathKey = `/v1/users/${userID}`;
+  const { data: user } = useSWR(() => (userID ? pathKey : ""));
 
   useEffect(() => {
-    setUserID(cookies.userID)
-    getAcronym(user?.name)
-  }, [cookies, user])
+    setUserID(cookies.userID);
+  }, [cookies]);
 
   const [loading, setLoading] = useState(false);
 
@@ -48,8 +26,8 @@ export const useMates = () => {
         const { data: res } = await api.post("/v1/users", data);
         if (res.message === "success") {
           setCookie("userID", res?.data, { path: "/" });
-
-          mutate(`/v1/users/${res?.data}`)
+          setUserID(res?.data);
+          mutate(`/v1/users/${res?.data}`);
           notifications.show({
             title: "Success",
             message: "You are authenticated!",
@@ -72,16 +50,19 @@ export const useMates = () => {
         setLoading(false);
       }
     },
-    [setCookie, mutate]
+    [setCookie]
   );
 
   const onAddMate = useCallback(
     async (data) => {
       setLoading(true);
       try {
-        const { data: res } = await api.post(`/ v1 / users / mates ? owner_id = ${data.owner_id}`, data);
+        const { data: res } = await api.post(
+          `/v1/users/mates?owner_id=${data.owner_id}`,
+          data
+        );
         if (res.message === "success") {
-          mutate(pathKey)
+          mutate(pathKey);
           notifications.show({
             title: "Success",
             message: "Mate has added!",
@@ -104,7 +85,7 @@ export const useMates = () => {
         setLoading(false);
       }
     },
-    [setCookie]
+    [pathKey]
   );
 
   const onDelete = useCallback(
@@ -112,7 +93,7 @@ export const useMates = () => {
       try {
         setLoading(true);
 
-        const { data: res } = await api.delete(`/ v1 / users / ${id} / mate`);
+        const { data: res } = await api.delete(`/v1/users/${id}/mate`);
 
         if (res.message === "success") {
           mutate(pathKey);
@@ -145,9 +126,9 @@ export const useMates = () => {
     async (data) => {
       setLoading(true);
       try {
-        const { data: res } = await api.post(`/ v1 / banks`, data);
+        const { data: res } = await api.post(`/v1/banks`, data);
         if (res.message === "success") {
-          mutate(`/v1/bills?owner_id=${res?.id}`)
+          mutate(pathKey);
           notifications.show({
             title: "Success",
             message: "Bank has added!",
@@ -170,7 +151,7 @@ export const useMates = () => {
         setLoading(false);
       }
     },
-    [setCookie]
+    [pathKey]
   );
 
   const onDeleteBank = useCallback(
@@ -178,7 +159,7 @@ export const useMates = () => {
       try {
         setLoading(true);
 
-        const { data: res } = await api.delete(`/ v1 / banks / ${id}`);
+        const { data: res } = await api.delete(`/v1/banks/${id}`);
 
         if (res.message === "success") {
           mutate(pathKey);
@@ -214,7 +195,6 @@ export const useMates = () => {
     onAddBank,
     onDelete,
     onDeleteBank,
-    acronym,
-    loading
+    loading,
   };
-}
+};

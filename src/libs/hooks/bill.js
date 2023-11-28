@@ -82,7 +82,42 @@ export const useBills = ({ ownerID, mateID }) => {
       try {
         setLoading(true);
 
-        const { data: res } = await api.post(`/v1/shares?type=${data.type ? data.type : "ADD"}`, data);
+        const { data: res } = await api.post(
+          `/v1/shares?type=${data.type ? data.type : "ADD"}`,
+          data
+        );
+
+        if (res.message === "success") {
+          mutate(pathKey);
+        } else {
+          notifications.show({
+            title: "Error",
+            message: res.message,
+            color: "red",
+          });
+        }
+      } catch (error) {
+        notifications.show({
+          title: "Error",
+          message: "Something went wrong",
+          color: "red",
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [pathKey]
+  );
+
+  const onBulkAddShare = useCallback(
+    async (data) => {
+      try {
+        setLoading(true);
+
+        const { data: res } = await api.post(
+          `/v1/shares/bulk?type=${data.type ? data.type : "BULK"}`,
+          data
+        );
 
         if (res.message === "success") {
           mutate(pathKey);
@@ -111,6 +146,7 @@ export const useBills = ({ ownerID, mateID }) => {
     onUpsert,
     onDelete,
     onAddShare,
+    onBulkAddShare,
     loading: loading || (!error && !data) || isValidating,
   };
 };

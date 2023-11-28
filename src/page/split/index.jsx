@@ -5,6 +5,7 @@ import { useSplit } from "../../libs/hooks/split";
 import { format } from "date-fns";
 import { notifications } from "@mantine/notifications";
 import { IconCopy } from "@tabler/icons-react";
+import { randomId } from "@mantine/hooks";
 
 export default function Split() {
   const { splitID } = useParams()
@@ -26,7 +27,7 @@ export default function Split() {
 
   const mateItems = split?.split_mates?.map((m) => {
     return (
-      <React.Fragment key={m.id}>
+      <React.Fragment key={m.id + randomId}>
         <Grid pb={35}>
           <Grid.Col span={12} pb={0}>
             <Group grow>
@@ -37,14 +38,14 @@ export default function Split() {
           {
             m?.split_items?.map((i) => {
               return (
-                <React.Fragment key={i.id + i.qty}>
+                <React.Fragment key={i.id + randomId}>
                   <Grid.Col span={6} m="auto 0" py={0}>
                     <Text fz={14} fw={400} c="dimmed">{i.name}</Text>
                   </Grid.Col>
-                  <Grid.Col key={i.id} span={1} m="auto 0" py={0}>
+                  <Grid.Col span={1} m="auto 0" py={0}>
                     <Text fz={14} fw={400} c="dimmed">{`x${i.qty}`}</Text>
                   </Grid.Col>
-                  <Grid.Col key={i.id} span={5} m="auto 0" py={0}>
+                  <Grid.Col span={5} m="auto 0" py={0}>
                     <Text fz={14} fw={400} c="dimmed" ta="right">{`Rp ${i.total.toLocaleString()}`}</Text>
                   </Grid.Col>
                 </React.Fragment>
@@ -128,7 +129,7 @@ export default function Split() {
           }
         </Box>
         <Box>
-          <Button onClick={handleCopyLink} disabled={copied} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Share</Button>
+          <Button onClick={handleCopyLink} disabled={copied} radius={0} mt={25} size="sm" fullWidth color="#F06418" variant="filled">Share</Button>
         </Box>
       </Box >
     </>

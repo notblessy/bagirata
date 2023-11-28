@@ -35,7 +35,7 @@ export default function Home() {
       nameClose()
     }
 
-  }, [user])
+  }, [nameClose, nameOpen, user?.mates])
 
   const mateItems = user?.mates?.map((m) => {
     const splitted = m?.user_detail?.name.split(" ")
@@ -278,8 +278,8 @@ export default function Home() {
               })
               :
               <>
-                <Text my={15} fz={16} fw={600} c="dimmed" ta="center">Empty Bill</Text>
-                <Divider />
+                <Text mb={20} fw={600} ta='center' c='dimmed'>Please add bill to calculate</Text>
+                <Divider mb={15} />
               </>
           }
           <Box>

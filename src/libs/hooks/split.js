@@ -1,9 +1,12 @@
 import { notifications } from "@mantine/notifications";
 import { useCallback, useState } from "react";
 import api from "../utils/api";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
+import { useNavigate } from "react-router-dom";
 
 export const useSplit = ({ id }) => {
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState();
   // eslint-disable-next-line no-unused-vars
   const pathKey = `v1/splits/${id}`;
@@ -15,12 +18,7 @@ export const useSplit = ({ id }) => {
       try {
         const { data: res } = await api.post(`/v1/splits/${owner_id}`);
         if (res.message === "success") {
-          mutate(pathKey)
-          notifications.show({
-            title: "Success",
-            message: "Split created!",
-            color: "blue",
-          });
+          navigate(`/splits/${res?.data?.id}`);
         } else {
           notifications.show({
             title: "Error",
@@ -38,13 +36,13 @@ export const useSplit = ({ id }) => {
         setLoading(false);
       }
     },
-    []
+    [navigate]
   );
 
   return {
     data: data,
     onAdd,
     error,
-    loading: loading || isValidating
+    loading: loading || isValidating,
   };
-}
+};

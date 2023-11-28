@@ -6,8 +6,8 @@ const base = {
 const development = (function () {
   let apiHost = "http://localhost:8181";
 
-  if (import.meta.env.REACT_APP_API_HOST) {
-    apiHost = import.meta.env.REACT_APP_API_HOST;
+  if (import.meta.env.VITE_APP_API_HOST) {
+    apiHost = import.meta.env.VITE_APP_API_HOST;
   }
 
   return {
@@ -18,10 +18,8 @@ const development = (function () {
 
 const production = {
   ...base,
-  API_HOST: import.meta.env.REACT_APP_API_HOST,
+  API_HOST: import.meta.env.VITE_APP_API_HOST,
 };
 
-const env = import.meta.env.REACT_APP_STAGE || "development";
-export default env === "production"
-  ? production
-  : development
+const env = import.meta.env.VITE_APP_STAGE || "development";
+export default env === "production" ? production : development;

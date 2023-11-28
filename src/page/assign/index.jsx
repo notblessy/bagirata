@@ -235,7 +235,7 @@ export default function Assign() {
           withCloseButton={false}
         >
           <Box style={{ maxWidth: '480px', margin: '0 auto' }}>
-            <Title order={3} mb={5}>Update Bill</Title>
+            <Title order={3} mb={5}>Are you sure?</Title>
             <Text mb={10} fz={16} fw={400} c="dimmed">{"You won't be able to edit the data after finishing it"}</Text>
             <Group grow>
               <Button onClick={() => continueClose()} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Cancel</Button>

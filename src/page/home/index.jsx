@@ -518,7 +518,7 @@ export default function Home() {
                 required
                 {...bankForm.getInputProps('bank_account')}
               />
-              <Text>Bank Account</Text>
+              <Text>Bank Number</Text>
               <Input
                 pb={10}
                 radius={0}

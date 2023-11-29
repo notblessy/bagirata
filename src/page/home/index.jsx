@@ -29,13 +29,13 @@ export default function Home() {
   const [billID, setBillID] = useState();
 
   useEffect(() => {
-    if (!user?.mates) {
+    if (!user?.mates && !loading) {
       nameOpen();
     } else {
       nameClose()
     }
 
-  }, [nameClose, nameOpen, user?.mates])
+  }, [nameClose, nameOpen, user?.mates, loading])
 
   const mateItems = user?.mates?.map((m) => {
     const splitted = m?.user_detail?.name.split(" ")

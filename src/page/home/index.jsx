@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ActionIcon, Avatar, Box, Button, CloseButton, Divider, Drawer, Grid, Group, Input, NumberInput, Text, Title } from "@mantine/core";
+import { ActionIcon, Avatar, Box, Button, CloseButton, Divider, Drawer, Grid, Group, Input, Loader, LoadingOverlay, NumberInput, Text, Title } from "@mantine/core";
 import { IconMinus, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { isEmail, useForm } from "@mantine/form";
@@ -23,7 +23,7 @@ export default function Home() {
 
   const { data: user, onRegister, onAddMate, onDelete: onDeleteMate, onAddBank, onDeleteBank, loading } = useMates();
 
-  const { data: bills, onUpsert, onDelete } = useBills({ ownerID: user?.id })
+  const { data: bills, onUpsert, onDelete, loading: billLoading } = useBills({ ownerID: user?.id })
 
   const [mate, setMate] = useState();
   const [billID, setBillID] = useState();
@@ -54,23 +54,29 @@ export default function Home() {
     return (
       <Box key={m.id} style={{ position: 'relative' }}>
         {
-          !m?.me ?
-            <ActionIcon
-              style={{ position: 'absolute', left: '30px' }}
-              color="#F06418"
-              radius="xl"
-              size="xs"
-              variant="filled"
-              aria-label="remove-mate"
-              onClick={() => {
-                onDeleteMate(m?.id)
-              }}
-            >
-              <IconX stroke={1.5} />
-            </ActionIcon>
-            : null
+          <Box>
+          {
+            !m?.me ?
+              <ActionIcon
+                style={{ position: 'absolute', left: '30px' }}
+                color="#F06418"
+                radius="xl"
+                size="xs"
+                variant="filled"
+                aria-label="remove-mate"
+                disabled={loading}
+                onClick={() => {
+                  onDeleteMate(m?.id)
+                }}
+              >
+                <IconX stroke={1.5} />
+              </ActionIcon>
+              :
+              null
+            }
+            <Avatar size={45} src={null} color="#F06418">{acr}</Avatar>
+          </Box>
         }
-        <Avatar size={45} src={null} color="#F06418">{acr}</Avatar>
       </Box>
     )
   })
@@ -219,9 +225,10 @@ export default function Home() {
               size="36px"
               variant="light"
               aria-label="add-mate"
+              disabled={loading}
               onClick={handleAddMate}
             >
-              <IconPlus stroke={1.5} />
+              {loading ? <Loader size="xs" color="#F06418" /> : <IconPlus stroke={1.5} />}
             </ActionIcon>
           </Grid.Col>
         </Grid>
@@ -236,51 +243,51 @@ export default function Home() {
       </Group>
       <Box>
         <Box mt={bills.length > 0 ? 20 : 0} style={{ padding: '10px 0' }}>
-          {
-            bills?.length > 0 ?
-              bills?.map((b) => {
-                return (
-                  <React.Fragment key={b.id}>
-                    <Grid mb={20}>
-                      <Grid.Col span={12} pb={0}>
-                        <Text fz={18} fw={600} c="#161617">{b.name}</Text>
-                      </Grid.Col>
-                      <Grid.Col span={4} m="auto 0" pt={0}>
-                        <Text fz={14} fw={400} c="dimmed">{`Rp ${b.price.toLocaleString()}`}</Text>
-                      </Grid.Col>
-                      <Grid.Col span={2} m="auto 0" pt={0}>
-                        <Text fz={12} fw={600} c="#161617" >{`x${b.qty}`}</Text>
-                      </Grid.Col>
-                      <Grid.Col span={4} pt={0} align="right" m="auto 0">
-                        <Text fz={14} fw={600} c="#161617">{`Rp ${(b.price * b.qty).toLocaleString()}`}</Text>
-                      </Grid.Col>
-                      <Grid.Col span={2} align="right" m="auto 0">
-                        <ActionIcon
-                          radius={0}
-                          color="#F06418"
-                          size="36px"
-                          variant="light"
-                          aria-label="add-mate"
-                          onClick={() => {
-                            editForm.setValues({ id: b.id, name: b.name, qty: b.qty, price: b.price })
-                            setBillID(b.id)
-                            editOpen()
-                          }}
-                        >
-                          <IconPencil stroke={1.5} />
-                        </ActionIcon>
-                      </Grid.Col>
-                    </Grid>
-                    <Divider mb={15} />
-                  </React.Fragment>
-                )
-              })
+          <Box pos="relative">
+            <LoadingOverlay visible={billLoading} zIndex={1000} loaderProps={{size: 'sm', color: '#F06418'}} overlayProps={{ radius: "sm", blur: 2 }} />
+            {
+              bills?.length > 0 ?
+                bills?.map((b) => {
+                  return (
+                    <React.Fragment key={b.id}>
+                      <Grid mb={20}>
+                        <Grid.Col span={12} pb={0}>
+                          <Text fz={18} fw={600} c="#161617">{b.name}</Text>
+                        </Grid.Col>
+                        <Grid.Col span={4} m="auto 0" pt={0}>
+                          <Text fz={14} fw={400} c="dimmed">{`Rp ${b.price.toLocaleString()}`}</Text>
+                        </Grid.Col>
+                        <Grid.Col span={2} m="auto 0" pt={0}>
+                          <Text fz={12} fw={600} c="#161617" >{`x${b.qty}`}</Text>
+                        </Grid.Col>
+                        <Grid.Col span={4} pt={0} align="right" m="auto 0">
+                          <Text fz={14} fw={600} c="#161617">{`Rp ${(b.price * b.qty).toLocaleString()}`}</Text>
+                        </Grid.Col>
+                        <Grid.Col span={2} align="right" m="auto 0">
+                          <ActionIcon
+                            radius={0}
+                            color="#F06418"
+                            size="36px"
+                            variant="light"
+                            aria-label="add-mate"
+                            onClick={() => {
+                              editForm.setValues({ id: b.id, name: b.name, qty: b.qty, price: b.price })
+                              setBillID(b.id)
+                              editOpen()
+                            }}
+                          >
+                            <IconPencil stroke={1.5} />
+                          </ActionIcon>
+                        </Grid.Col>
+                      </Grid>
+                      <Divider mb={15} />
+                    </React.Fragment>
+                  )
+                })
               :
-              <>
-                <Text mb={20} fw={600} ta='center' c='dimmed'>Please add bill to calculate</Text>
-                <Divider mb={15} />
-              </>
-          }
+              <Text fw={600} mb={40} mt={20} ta='center' c='dimmed'>Please add bill to calculate</Text>
+            }
+          </Box>
           <Box>
             <Group>
               <Title order={5} c="#161617">Transfer to:</Title>

@@ -11,7 +11,7 @@ export const useMates = () => {
   const [userID, setUserID] = useState(cookies.userID || "");
 
   const pathKey = `/v1/users/${userID}`;
-  const { data: user } = useSWR(() => (userID ? pathKey : ""));
+  const { data: user, isLoading } = useSWR(() => (userID ? pathKey : ""));
 
   useEffect(() => {
     setUserID(cookies.userID);
@@ -195,6 +195,6 @@ export const useMates = () => {
     onAddBank,
     onDelete,
     onDeleteBank,
-    loading,
+    loading: loading || isLoading,
   };
 };

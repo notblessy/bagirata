@@ -155,10 +155,9 @@ export default function Home() {
     return
   }
 
-  const handleRegister = (user) => {
-    onRegister({ id: generateID(), name: user.name, email: user.email })
-    nameClose()
-
+  const handleRegister = async (user) => {
+    await onRegister({ id: generateID(), name: user.name, email: user.email })
+    nameClose();
     userForm.reset()
   }
 

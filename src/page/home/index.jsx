@@ -61,17 +61,18 @@ export default function Home() {
     } else {
       setUser(null);
     }
-  }, [cookies, setUser]);
+  }, [cookies, user, setUser]);
 
   const handleDeleteFriend = (id) => {
-    user?.friends?.splice(
-      user?.friends?.findIndex((f) => f.id == id),
-      1
-    );
+    user.friends = user?.friends?.filter((f) => f.id !== id);
 
     user?.friends?.sort(
       (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
     );
+
+    setUser(user);
+    const jsonData = JSON.stringify(user);
+    localStorage.setItem(user?.id, jsonData);
   };
 
   const friendItems = user?.friends?.map((f) => {
@@ -247,25 +248,25 @@ export default function Home() {
     form.reset();
   };
 
-  const handleUpdate = (bill) => {
-    if (bill.id != "") {
-      user?.bills?.splice(
-        user?.bills?.findIndex((b) => b.id == bill.id),
-        1
-      );
+  const handleUpdate = (payload) => {
+    if (payload.id != "") {
+      user.bills?.filter((b) => b.id !== payload.id);
 
-      user?.bills?.splice(user?.bills?.length, 0, {
-        id: bill.id,
+      user?.bills.push({
+        id: payload.id,
         ownerID: user.id,
-        name: bill.name,
-        qty: +bill.qty,
-        price: +bill.price,
-        createdAt: bill.createdAt,
+        name: payload.name,
+        qty: +payload.qty,
+        price: +payload.price,
+        createdAt: payload.createdAt,
       });
 
-      user?.bills?.sort(
+      user.bills = user?.bills?.sort(
         (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
       );
+
+      const jsonData = JSON.stringify(user);
+      localStorage.setItem(user?.id, jsonData);
 
       editClose();
       editForm.reset();
@@ -273,12 +274,14 @@ export default function Home() {
   };
 
   const handleDeleteBill = (id) => {
-    user?.bills?.splice(
-      user?.bills?.findIndex((b) => b.id == id),
-      1
-    );
+    user.bills = user?.bills?.filter((b) => {
+      return b.id !== id;
+    });
 
     user?.bills?.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    const jsonData = JSON.stringify(user);
+    localStorage.setItem(user?.id, jsonData);
   };
 
   const handleContinue = () => {

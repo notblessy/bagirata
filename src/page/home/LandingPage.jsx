@@ -11,14 +11,11 @@ import {
 import { IconCheck } from "@tabler/icons-react";
 import { Dots } from "../../components/PatternDots";
 
-import classes from "./classes.css";
-
 // eslint-disable-next-line react/prop-types
 export default function LandingPage({ onGetStarted }) {
   return (
     <Box mt={30} style={{ padding: "10px 20px" }}>
       <Dots
-        className={classes.dots}
         style={{
           left: 0,
           top: 0,
@@ -28,7 +25,6 @@ export default function LandingPage({ onGetStarted }) {
         }}
       />
       <Dots
-        className={classes.dots}
         style={{
           right: 0,
           bottom: 0,

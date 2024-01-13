@@ -23,6 +23,7 @@ import { v4 as uuidv4 } from "uuid";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
 import { useCookies } from "react-cookie";
+import LandingPage from "./LandingPage";
 
 function generateID() {
   return uuidv4();
@@ -49,19 +50,18 @@ export default function Home() {
   useEffect(() => {
     const userID = cookies?.userID;
     if (!userID) {
-      nameOpen();
+      setUser(null);
 
       return;
     }
 
     const userData = localStorage.getItem(userID);
-    if (!userData) {
-      nameOpen();
-    } else {
+    if (userData) {
       setUser(JSON.parse(userData));
-      nameClose();
+    } else {
+      setUser(null);
     }
-  }, [cookies, nameClose, nameOpen]);
+  }, [cookies, setUser]);
 
   const handleDeleteFriend = (id) => {
     user?.friends?.splice(
@@ -210,7 +210,7 @@ export default function Home() {
         bankAccountName: payload.bankAccountName,
         bankNumber: payload.bankNumber,
       },
-      createdAt: new Date()
+      createdAt: new Date(),
     };
 
     setUser(data);
@@ -221,7 +221,7 @@ export default function Home() {
     localStorage.setItem(id, jsonData);
 
     nameClose();
-    // userForm.reset();
+    userForm.reset();
   };
 
   const handleAddBill = (bill) => {
@@ -287,362 +287,379 @@ export default function Home() {
 
   return (
     <Box mt={30} style={{ padding: "10px 20px" }}>
-      <Text c="#F06418" fz={12} fw={600}>
-        Bagi Rata
-      </Text>
-      <Title order={1} c="#161617">
-        Create your bill
-      </Title>
-      {user?.bank ? (
-        <Box>
-          <Box
-            mt={10}
-            p={10}
-            style={{ width: "100%", border: "1px solid #eee" }}
-          >
-            <Group justify="space-between">
-              <Box>
-                <Text fz={12} fw={800}>
-                  {user?.bank.bankAccountName}
-                </Text>
-                <Group gap={5}>
-                  <Text
-                    fz={12}
-                  >{`${user?.bank.bank} - ${user?.bank.bankNumber}`}</Text>
+      {!user ? (
+        <LandingPage onGetStarted={() => nameOpen()} />
+      ) : (
+        <>
+          <Text c="#F06418" fz={12} fw={600}>
+            Bagi Rata
+          </Text>
+          <Title order={1} c="#161617">
+            Create your bill
+          </Title>
+          {user?.bank ? (
+            <Box>
+              <Box
+                mt={10}
+                p={10}
+                style={{ width: "100%", border: "1px solid #eee" }}
+              >
+                <Group justify="space-between">
+                  <Box>
+                    <Text fz={12} fw={800}>
+                      {user?.bank.bankAccountName}
+                    </Text>
+                    <Group gap={5}>
+                      <Text
+                        fz={12}
+                      >{`${user?.bank.bank} - ${user?.bank.bankNumber}`}</Text>
+                    </Group>
+                  </Box>
                 </Group>
               </Box>
-            </Group>
-          </Box>
-        </Box>
-      ) : null}
-      <Box mt={10} style={{ width: "100%" }}>
-        <Grid>
-          <Grid.Col span={10}>
-            <Input
-              py={10}
-              radius={0}
-              placeholder="Input your mates"
-              value={friendName}
-              onChange={(event) => setFriendName(event.currentTarget.value)}
-              rightSectionPointerEvents="all"
-              rightSection={
-                <CloseButton
-                  aria-label="Clear input"
-                  onClick={() => setFriendName("")}
-                  style={{ display: friendName ? undefined : "none" }}
+            </Box>
+          ) : null}
+          <Box mt={10} style={{ width: "100%" }}>
+            <Grid>
+              <Grid.Col span={10}>
+                <Input
+                  py={10}
+                  radius={0}
+                  placeholder="Input your mates"
+                  value={friendName}
+                  onChange={(event) => setFriendName(event.currentTarget.value)}
+                  rightSectionPointerEvents="all"
+                  rightSection={
+                    <CloseButton
+                      aria-label="Clear input"
+                      onClick={() => setFriendName("")}
+                      style={{ display: friendName ? undefined : "none" }}
+                    />
+                  }
                 />
-              }
-            />
-          </Grid.Col>
-          <Grid.Col span={2}>
-            <ActionIcon
-              radius={0}
-              style={{ margin: "10px 0", width: "100%", alignItems: "center" }}
-              color="#F06418"
-              size="36px"
-              variant="light"
-              aria-label="add-mate"
-              disabled={loading}
-              onClick={handleAddFriend}
-            >
-              {loading ? (
-                <Loader size="xs" color="#F06418" />
-              ) : (
-                <IconPlus stroke={1.5} />
-              )}
-            </ActionIcon>
-          </Grid.Col>
-        </Grid>
-      </Box>
-      <Group gap="xs" style={{ padding: "10px 0" }}>
-        {friendItems?.length > 0 ? friendItems : null}
-      </Group>
-      <Box>
-        <Box mt={user?.bills?.length > 0 ? 20 : 0} style={{ padding: "10px 0" }}>
-          <Box pos="relative">
-            <LoadingOverlay
-              visible={loading}
-              zIndex={1000}
-              loaderProps={{ size: "sm", color: "#F06418" }}
-              overlayProps={{ radius: "sm", blur: 2 }}
-            />
-            {user?.bills?.length > 0 ? (
-              user?.bills?.map((b) => {
-                return (
-                  <React.Fragment key={b.id}>
-                    <Grid mb={20}>
-                      <Grid.Col span={12} pb={0}>
-                        <Text fz={18} fw={600} c="#161617">
-                          {b.name}
-                        </Text>
-                      </Grid.Col>
-                      <Grid.Col span={4} m="auto 0" pt={0}>
-                        <Text
-                          fz={14}
-                          fw={400}
-                          c="dimmed"
-                        >{`Rp ${b?.price?.toLocaleString()}`}</Text>
-                      </Grid.Col>
-                      <Grid.Col span={2} m="auto 0" pt={0}>
-                        <Text fz={12} fw={600} c="#161617">{`x${b.qty}`}</Text>
-                      </Grid.Col>
-                      <Grid.Col span={4} pt={0} align="right" m="auto 0">
-                        <Text fz={14} fw={600} c="#161617">{`Rp ${(
-                          b.price * b.qty
-                        ).toLocaleString()}`}</Text>
-                      </Grid.Col>
-                      <Grid.Col span={2} align="right" m="auto 0">
-                        <ActionIcon
-                          radius={0}
-                          color="#F06418"
-                          size="36px"
-                          variant="light"
-                          aria-label="add-mate"
-                          onClick={() => {
-                            editForm.setValues({
-                              id: b.id,
-                              name: b.name,
-                              qty: b.qty,
-                              price: b.price,
-                              createdAt: b.createdAt,
-                            });
-                            setBillID(b.id);
-                            editOpen();
-                          }}
-                        >
-                          <IconPencil stroke={1.5} />
-                        </ActionIcon>
-                      </Grid.Col>
-                    </Grid>
-                    <Divider mb={15} />
-                  </React.Fragment>
-                );
-              })
-            ) : (
-              <Text fw={600} mb={40} mt={20} ta="center" c="dimmed">
-                Please add bill to calculate
-              </Text>
-            )}
+              </Grid.Col>
+              <Grid.Col span={2}>
+                <ActionIcon
+                  radius={0}
+                  style={{
+                    margin: "10px 0",
+                    width: "100%",
+                    alignItems: "center",
+                  }}
+                  color="#F06418"
+                  size="36px"
+                  variant="light"
+                  aria-label="add-mate"
+                  disabled={loading}
+                  onClick={handleAddFriend}
+                >
+                  {loading ? (
+                    <Loader size="xs" color="#F06418" />
+                  ) : (
+                    <IconPlus stroke={1.5} />
+                  )}
+                </ActionIcon>
+              </Grid.Col>
+            </Grid>
           </Box>
-          <Group grow>
-            <Button
-              onClick={open}
-              radius={0}
-              mt={15}
-              size="sm"
-              color="#F06418"
-              variant="filled"
-            >
-              Add Bill
-            </Button>
-            <Button
-              onClick={handleContinue}
-              disabled={
-                !user?.id || user?.user_banks?.length < 1 ? true : false
-              }
-              radius={0}
-              mt={15}
-              size="sm"
-              color="#F06418"
-              variant="light"
-            >
-              Continue
-            </Button>
+          <Group gap="xs" style={{ padding: "10px 0" }}>
+            {friendItems?.length > 0 ? friendItems : null}
           </Group>
-        </Box>
-        <Drawer
-          overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
-          opened={nameOpened}
-          onClose={nameClose}
-          position="bottom"
-          withCloseButton={false}
-        >
-          <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
-            <Title order={3} mb={20}>
-              What is your name?
-            </Title>
-            <form onSubmit={userForm.onSubmit(handleRegister)}>
-              <Text>Name</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Your name"
-                required
-                {...userForm.getInputProps("name")}
-              />
-              <Text>Email</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Your email"
-                required
-                {...userForm.getInputProps("email")}
-              />
-              <Text>Bank</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Bank"
-                required
-                {...userForm.getInputProps("bank")}
-              />
-              <Text>Bank Account Name</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Bank Account Name"
-                required
-                {...userForm.getInputProps("bankAccountName")}
-              />
-              <Text>Bank Number</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Bank Number"
-                required
-                {...userForm.getInputProps("bankNumber")}
-              />
-              <Button
-                radius={0}
-                mt={15}
-                size="sm"
-                fullWidth
-                color="#F06418"
-                variant="filled"
-                loading={loading}
-                type="submit"
-              >
-                Submit
-              </Button>
-            </form>
-          </Box>
-        </Drawer>
-        <Drawer
-          overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
-          opened={opened}
-          onClose={close}
-          position="bottom"
-          withCloseButton={false}
-        >
-          <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
-            <Title order={3} mb={20}>
-              Add Bill
-            </Title>
-            <form onSubmit={form.onSubmit(handleAddBill)}>
-              <Text>Item Name</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Item name"
-                required
-                {...form.getInputProps("name")}
-              />
-              <Group grow style={{ alignItems: "flex-start" }}>
-                <Box>
-                  <Text>Quantity</Text>
-                  <NumberInput
-                    radius={0}
-                    placeholder="Quantity"
-                    required
-                    {...form.getInputProps("qty")}
-                  />
-                </Box>
-                <Box>
-                  <Text>Price</Text>
-                  <NumberInput
-                    radius={0}
-                    placeholder="Price"
-                    required
-                    {...form.getInputProps("price")}
-                  />
-                </Box>
-              </Group>
-              <Button
-                radius={0}
-                mt={15}
-                size="sm"
-                fullWidth
-                color="#F06418"
-                variant="filled"
-                loading={loading}
-                type="submit"
-              >
-                Add
-              </Button>
-            </form>
-          </Box>
-        </Drawer>
-        <Drawer
-          overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
-          opened={editOpened}
-          onClose={editClose}
-          position="bottom"
-          withCloseButton={false}
-        >
-          <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
-            <Title order={3} mb={20}>
-              Update Bill
-            </Title>
-            <form onSubmit={editForm.onSubmit(handleUpdate)}>
-              <Text>Item Name</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Item name"
-                required
-                {...editForm.getInputProps("name")}
-              />
-              <Group grow style={{ alignItems: "flex-start" }}>
-                <Box>
-                  <Text>Quantity</Text>
-                  <NumberInput
-                    radius={0}
-                    placeholder="Quantity"
-                    required
-                    {...editForm.getInputProps("qty")}
-                  />
-                </Box>
-                <Box>
-                  <Text>Price</Text>
-                  <NumberInput
-                    radius={0}
-                    placeholder="Price"
-                    required
-                    {...editForm.getInputProps("price")}
-                  />
-                </Box>
-              </Group>
+          <Box>
+            <Box
+              mt={user?.bills?.length > 0 ? 20 : 0}
+              style={{ padding: "10px 0" }}
+            >
+              <Box pos="relative">
+                <LoadingOverlay
+                  visible={loading}
+                  zIndex={1000}
+                  loaderProps={{ size: "sm", color: "#F06418" }}
+                  overlayProps={{ radius: "sm", blur: 2 }}
+                />
+                {user?.bills?.length > 0 ? (
+                  user?.bills?.map((b) => {
+                    return (
+                      <React.Fragment key={b.id}>
+                        <Grid mb={20}>
+                          <Grid.Col span={12} pb={0}>
+                            <Text fz={18} fw={600} c="#161617">
+                              {b.name}
+                            </Text>
+                          </Grid.Col>
+                          <Grid.Col span={4} m="auto 0" pt={0}>
+                            <Text
+                              fz={14}
+                              fw={400}
+                              c="dimmed"
+                            >{`Rp ${b?.price?.toLocaleString()}`}</Text>
+                          </Grid.Col>
+                          <Grid.Col span={2} m="auto 0" pt={0}>
+                            <Text
+                              fz={12}
+                              fw={600}
+                              c="#161617"
+                            >{`x${b.qty}`}</Text>
+                          </Grid.Col>
+                          <Grid.Col span={4} pt={0} align="right" m="auto 0">
+                            <Text fz={14} fw={600} c="#161617">{`Rp ${(
+                              b.price * b.qty
+                            ).toLocaleString()}`}</Text>
+                          </Grid.Col>
+                          <Grid.Col span={2} align="right" m="auto 0">
+                            <ActionIcon
+                              radius={0}
+                              color="#F06418"
+                              size="36px"
+                              variant="light"
+                              aria-label="add-mate"
+                              onClick={() => {
+                                editForm.setValues({
+                                  id: b.id,
+                                  name: b.name,
+                                  qty: b.qty,
+                                  price: b.price,
+                                  createdAt: b.createdAt,
+                                });
+                                setBillID(b.id);
+                                editOpen();
+                              }}
+                            >
+                              <IconPencil stroke={1.5} />
+                            </ActionIcon>
+                          </Grid.Col>
+                        </Grid>
+                        <Divider mb={15} />
+                      </React.Fragment>
+                    );
+                  })
+                ) : (
+                  <Text fw={600} mb={40} mt={20} ta="center" c="dimmed">
+                    Please add bill to calculate
+                  </Text>
+                )}
+              </Box>
               <Group grow>
                 <Button
+                  onClick={open}
                   radius={0}
                   mt={15}
                   size="sm"
                   color="#F06418"
                   variant="filled"
-                  loading={loading}
-                  type="submit"
                 >
-                  Update
+                  Add Bill
                 </Button>
                 <Button
+                  onClick={handleContinue}
+                  disabled={
+                    !user?.id || user?.user_banks?.length < 1 ? true : false
+                  }
                   radius={0}
                   mt={15}
                   size="sm"
                   color="#F06418"
                   variant="light"
-                  onClick={() => {
-                    handleDeleteBill(billID);
-                    editClose();
-                    setBillID("");
-                  }}
                 >
-                  Delete
+                  Continue
                 </Button>
               </Group>
-            </form>
+            </Box>
           </Box>
-        </Drawer>
-      </Box>
+        </>
+      )}
+      <Drawer
+        overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
+        opened={nameOpened}
+        onClose={nameClose}
+        position="bottom"
+        withCloseButton={false}
+      >
+        <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
+          <Title order={3} mb={20}>
+            What is your name?
+          </Title>
+          <form onSubmit={userForm.onSubmit(handleRegister)}>
+            <Text>Name</Text>
+            <Input
+              pb={10}
+              radius={0}
+              placeholder="Your name"
+              required
+              {...userForm.getInputProps("name")}
+            />
+            <Text>Email</Text>
+            <Input
+              pb={10}
+              radius={0}
+              placeholder="Your email"
+              required
+              {...userForm.getInputProps("email")}
+            />
+            <Text>Bank</Text>
+            <Input
+              pb={10}
+              radius={0}
+              placeholder="Bank"
+              required
+              {...userForm.getInputProps("bank")}
+            />
+            <Text>Bank Account Name</Text>
+            <Input
+              pb={10}
+              radius={0}
+              placeholder="Bank Account Name"
+              required
+              {...userForm.getInputProps("bankAccountName")}
+            />
+            <Text>Bank Number</Text>
+            <Input
+              pb={10}
+              radius={0}
+              placeholder="Bank Number"
+              required
+              {...userForm.getInputProps("bankNumber")}
+            />
+            <Button
+              radius={0}
+              mt={15}
+              size="sm"
+              fullWidth
+              color="#F06418"
+              variant="filled"
+              loading={loading}
+              type="submit"
+            >
+              Submit
+            </Button>
+          </form>
+        </Box>
+      </Drawer>
+      <Drawer
+        overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
+        opened={opened}
+        onClose={close}
+        position="bottom"
+        withCloseButton={false}
+      >
+        <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
+          <Title order={3} mb={20}>
+            Add Bill
+          </Title>
+          <form onSubmit={form.onSubmit(handleAddBill)}>
+            <Text>Item Name</Text>
+            <Input
+              pb={10}
+              radius={0}
+              placeholder="Item name"
+              required
+              {...form.getInputProps("name")}
+            />
+            <Group grow style={{ alignItems: "flex-start" }}>
+              <Box>
+                <Text>Quantity</Text>
+                <NumberInput
+                  radius={0}
+                  placeholder="Quantity"
+                  required
+                  {...form.getInputProps("qty")}
+                />
+              </Box>
+              <Box>
+                <Text>Price</Text>
+                <NumberInput
+                  radius={0}
+                  placeholder="Price"
+                  required
+                  {...form.getInputProps("price")}
+                />
+              </Box>
+            </Group>
+            <Button
+              radius={0}
+              mt={15}
+              size="sm"
+              fullWidth
+              color="#F06418"
+              variant="filled"
+              loading={loading}
+              type="submit"
+            >
+              Add
+            </Button>
+          </form>
+        </Box>
+      </Drawer>
+      <Drawer
+        overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
+        opened={editOpened}
+        onClose={editClose}
+        position="bottom"
+        withCloseButton={false}
+      >
+        <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
+          <Title order={3} mb={20}>
+            Update Bill
+          </Title>
+          <form onSubmit={editForm.onSubmit(handleUpdate)}>
+            <Text>Item Name</Text>
+            <Input
+              pb={10}
+              radius={0}
+              placeholder="Item name"
+              required
+              {...editForm.getInputProps("name")}
+            />
+            <Group grow style={{ alignItems: "flex-start" }}>
+              <Box>
+                <Text>Quantity</Text>
+                <NumberInput
+                  radius={0}
+                  placeholder="Quantity"
+                  required
+                  {...editForm.getInputProps("qty")}
+                />
+              </Box>
+              <Box>
+                <Text>Price</Text>
+                <NumberInput
+                  radius={0}
+                  placeholder="Price"
+                  required
+                  {...editForm.getInputProps("price")}
+                />
+              </Box>
+            </Group>
+            <Group grow>
+              <Button
+                radius={0}
+                mt={15}
+                size="sm"
+                color="#F06418"
+                variant="filled"
+                loading={loading}
+                type="submit"
+              >
+                Update
+              </Button>
+              <Button
+                radius={0}
+                mt={15}
+                size="sm"
+                color="#F06418"
+                variant="light"
+                onClick={() => {
+                  handleDeleteBill(billID);
+                  editClose();
+                  setBillID("");
+                }}
+              >
+                Delete
+              </Button>
+            </Group>
+          </form>
+        </Box>
+      </Drawer>
     </Box>
   );
 }

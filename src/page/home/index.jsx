@@ -1,218 +1,330 @@
 import React, { useEffect, useState } from "react";
-import { ActionIcon, Avatar, Box, Button, CloseButton, Divider, Drawer, Grid, Group, Input, Loader, LoadingOverlay, NumberInput, Text, Title } from "@mantine/core";
-import { IconMinus, IconPencil, IconPlus, IconX } from "@tabler/icons-react";
+import {
+  ActionIcon,
+  Avatar,
+  Box,
+  Button,
+  CloseButton,
+  Divider,
+  Drawer,
+  Grid,
+  Group,
+  Input,
+  Loader,
+  LoadingOverlay,
+  NumberInput,
+  Text,
+  Title,
+} from "@mantine/core";
+import { IconPencil, IconPlus, IconX } from "@tabler/icons-react";
 import { useDisclosure } from "@mantine/hooks";
 import { isEmail, useForm } from "@mantine/form";
-import { v4 as uuidv4 } from 'uuid';
-import { useBills } from "../../libs/hooks/bill";
-import { useMates } from "../../libs/hooks/mate";
+import { v4 as uuidv4 } from "uuid";
 import { notifications } from "@mantine/notifications";
 import { useNavigate } from "react-router-dom";
+import { useCookies } from "react-cookie";
 
 function generateID() {
-  return uuidv4()
+  return uuidv4();
 }
 
 export default function Home() {
   const navigate = useNavigate();
+  const [cookies, setCookie, removeCookie] = useCookies(["session"]);
 
   const [opened, { open, close }] = useDisclosure(false);
-  const [nameOpened, { open: nameOpen, close: nameClose }] = useDisclosure(false);
-  const [editOpened, { open: editOpen, close: editClose }] = useDisclosure(false);
-  const [bankOpened, { open: bankOpen, close: bankClose }] = useDisclosure(false);
+  const [nameOpened, { open: nameOpen, close: nameClose }] =
+    useDisclosure(false);
+  const [editOpened, { open: editOpen, close: editClose }] =
+    useDisclosure(false);
 
-  const { data: user, onRegister, onAddMate, onDelete: onDeleteMate, onAddBank, onDeleteBank, loading } = useMates();
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
 
-  const { data: bills, onUpsert, onDelete, loading: billLoading } = useBills({ ownerID: user?.id })
-
-  const [mate, setMate] = useState();
+  const [friendName, setFriendName] = useState();
   const [billID, setBillID] = useState();
 
   useEffect(() => {
-    if (!user?.mates && !loading) {
+    const userID = cookies?.userID;
+    if (!userID) {
       nameOpen();
-    } else {
-      nameClose()
+
+      return;
     }
 
-  }, [nameClose, nameOpen, user?.mates, loading])
-
-  const mateItems = user?.mates?.map((m) => {
-    const splitted = m?.user_detail?.name.split(" ")
-
-    let acr = ''
-    if (splitted.length == 1) {
-      acr = splitted[0].length > 2 ?
-        splitted[0].substring(0, 2).toUpperCase() :
-        splitted[0].toUpperCase();
+    const userData = localStorage.getItem(userID);
+    if (!userData) {
+      nameOpen();
     } else {
-      acr = splitted.map((word) => word[0]).
-        join('').
-        toUpperCase();
+      setUser(JSON.parse(userData));
+      nameClose();
+    }
+  }, [cookies, nameClose, nameOpen]);
+
+  const handleDeleteFriend = (id) => {
+    user?.friends?.splice(
+      user?.friends?.findIndex((f) => f.id == id),
+      1
+    );
+
+    user?.friends?.sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+    );
+  };
+
+  const friendItems = user?.friends?.map((f) => {
+    const splitted = f?.name?.split(" ");
+
+    let acr = "";
+    if (splitted?.length == 1) {
+      acr =
+        splitted[0].length > 2
+          ? splitted[0].substring(0, 2).toUpperCase()
+          : splitted[0].toUpperCase();
+    } else {
+      acr = splitted
+        ?.map((word) => word[0])
+        .join("")
+        .toUpperCase();
     }
 
     return (
-      <Box key={m.id} style={{ position: 'relative' }}>
+      <Box key={f.id} style={{ position: "relative" }}>
         {
           <Box>
-          {
-            !m?.me ?
+            {!f?.me ? (
               <ActionIcon
-                style={{ position: 'absolute', left: '30px' }}
+                style={{ position: "absolute", left: "30px" }}
                 color="#F06418"
                 radius="xl"
                 size="xs"
                 variant="filled"
                 aria-label="remove-mate"
-                disabled={loading}
                 onClick={() => {
-                  onDeleteMate(m?.id)
+                  handleDeleteFriend(f?.id);
                 }}
               >
                 <IconX stroke={1.5} />
               </ActionIcon>
-              :
-              null
-            }
-            <Avatar size={45} src={null} color="#F06418">{acr}</Avatar>
+            ) : null}
+            <Avatar size={45} src={null} color="#F06418">
+              {acr}
+            </Avatar>
           </Box>
         }
       </Box>
-    )
-  })
-
-  const bankForm = useForm({
-    initialValues: {
-      bank_name: '',
-      bank_account: '',
-      bank_number: '',
-    },
-
-    validate: {
-      bank_name: (value) => value == "" ? "empty form" : null,
-      bank_account: (value) => value == "" ? "empty form" : null,
-      bank_number: (value) => value == "" ? "empty form" : null,
-    },
+    );
   });
 
   const userForm = useForm({
     initialValues: {
-      id: '',
-      name: '',
-      email: '',
+      id: "",
+      name: "",
+      email: "",
+      bank: "",
+      bankAccountName: "",
+      bankNumber: null,
     },
 
     validate: {
-      name: (value) => value == "" ? "empty form" : null,
-      email: isEmail('Invalid email'),
+      name: (value) => (value == "" ? "name required" : null),
+      email: isEmail("Invalid email"),
+      bankNumber: (value) => (value < 0 ? "bank number unsigned" : null),
     },
   });
 
   const form = useForm({
     initialValues: {
-      name: '',
-      owner_id: '',
+      name: "",
+      owner_id: "",
       qty: 0,
       price: 0,
     },
 
     validate: {
-      name: (value) => value == "" ? "empty form" : null,
-      qty: (value) => value < 1 ? "not a number" : null,
-      price: (value) => value < 1 ? "not a number" : null,
+      name: (value) => (value == "" ? "empty form" : null),
+      qty: (value) => (value < 1 ? "not a number" : null),
+      price: (value) => (value < 1 ? "not a number" : null),
     },
   });
 
   const editForm = useForm({
     initialValues: {
-      id: '',
-      owner_id: '',
-      name: '',
+      id: "",
+      owner_id: "",
+      name: "",
       qty: 0,
       price: 0,
+      createdAt: null,
     },
 
     validate: {
-      name: (value) => value == "" ? "empty form" : null,
-      qty: (value) => value < 1 ? "not a number" : null,
-      price: (value) => value < 1 ? "not a number" : null,
+      name: (value) => (value == "" ? "empty form" : null),
+      qty: (value) => (value < 1 ? "not a number" : null),
+      price: (value) => (value < 1 ? "not a number" : null),
     },
   });
 
-  const handleAddMate = () => {
-    if (mate !== "") {
-      onAddMate({
-        id: generateID(),
-        owner_id: user.id,
-        name: mate,
-      })
+  const handleAddFriend = () => {
+    if (!friendName) {
+      notifications.show({
+        title: "Error",
+        message: "Please input your friend's name",
+        color: "red",
+      });
 
-      setMate('')
-
-      return
+      return;
     }
 
-    notifications.show({
-      title: "Error",
-      message: "Form cannot be empty",
-      color: "red",
+    user?.friends?.splice(user?.friends?.length, 0, {
+      id: generateID(),
+      name: friendName,
+      me: false,
+      createdAt: new Date(),
     });
 
-    return
-  }
+    const jsonData = JSON.stringify(user);
+    localStorage.setItem(user.id, jsonData);
 
-  const handleRegister = async (user) => {
-    await onRegister({ id: generateID(), name: user.name, email: user.email })
+    user?.friends?.sort(
+      (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+    );
+
+    setFriendName("");
+    return;
+  };
+
+  const handleRegister = (payload) => {
+    const id = generateID();
+    const data = {
+      id: id,
+      name: payload.name,
+      email: payload.email,
+      friends: [
+        { id: id, name: payload.name, me: true, createdAt: new Date() },
+      ],
+      bank: {
+        bank: payload.bank,
+        bankAccountName: payload.bankAccountName,
+        bankNumber: payload.bankNumber,
+      },
+    };
+
+    setUser(data);
+
+    setCookie("userID", id, { path: "/" });
+
+    const jsonData = JSON.stringify(data);
+    localStorage.setItem(id, jsonData);
+
     nameClose();
-    userForm.reset()
-  }
+    // userForm.reset();
+  };
 
   const handleAddBill = (bill) => {
-    bill.id = generateID()
+    bill.id = generateID();
 
-    onUpsert({ id: bill.id, owner_id: user.id, name: bill.name, qty: +bill.qty, price: +bill.price })
-    close()
-    form.reset()
-  }
+    user?.bills?.splice(user?.bills?.length, 0, {
+      id: bill.id,
+      owner_id: user.id,
+      name: bill.name,
+      qty: +bill.qty,
+      price: +bill.price,
+      createdAt: new Date(),
+    });
+
+    user?.bills?.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    const jsonData = JSON.stringify(user);
+    localStorage.setItem(user?.id, jsonData);
+
+    close();
+    form.reset();
+  };
 
   const handleUpdate = (bill) => {
     if (bill.id != "") {
-      onUpsert({ id: bill.id, owner_id: user.id, name: bill.name, qty: +bill.qty, price: +bill.price })
-      editClose()
-      editForm.reset()
+      user?.bills?.splice(
+        user?.bills?.findIndex((b) => b.id == bill.id),
+        1
+      );
+
+      user?.bills?.splice(user?.bills?.length, 0, {
+        id: bill.id,
+        owner_id: user.id,
+        name: bill.name,
+        qty: +bill.qty,
+        price: +bill.price,
+        createdAt: bill.createdAt,
+      });
+
+      user?.bills?.sort(
+        (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+      );
+
+      editClose();
+      editForm.reset();
     }
-  }
+  };
 
-  const handleCreateBank = (bank) => {
-    onAddBank({ owner_id: user?.id, bank_name: bank.bank_name, bank_account: bank.bank_account, bank_number: bank.bank_number })
-    bankClose()
+  const handleDeleteBill = (id) => {
+    user?.bills?.splice(
+      user?.bills?.findIndex((b) => b.id == id),
+      1
+    );
 
-    userForm.reset()
-  }
+    user?.bills?.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  };
 
   const handleContinue = () => {
-    navigate(user?.id)
-  }
+    navigate(user?.id);
+  };
 
   return (
-    <Box mt={30} style={{ padding: '10px 20px' }}>
-      <Text c="#F06418" fz={12} fw={600}>Bagi Rata</Text>
-      <Title order={1} c="#161617">Create your bill</Title>
-      <Box style={{ width: '100%' }}>
+    <Box mt={30} style={{ padding: "10px 20px" }}>
+      <Text c="#F06418" fz={12} fw={600}>
+        Bagi Rata
+      </Text>
+      <Title order={1} c="#161617">
+        Create your bill
+      </Title>
+      {user?.bank ? (
+        <Box>
+          <Box
+            mt={10}
+            p={10}
+            style={{ width: "100%", border: "1px solid #eee" }}
+          >
+            <Group justify="space-between">
+              <Box>
+                <Text fz={12} fw={800}>
+                  {user?.bank.bankAccountName}
+                </Text>
+                <Group gap={5}>
+                  <Text
+                    fz={12}
+                  >{`${user?.bank.bank} - ${user?.bank.bankNumber}`}</Text>
+                </Group>
+              </Box>
+            </Group>
+          </Box>
+        </Box>
+      ) : null}
+      <Box mt={10} style={{ width: "100%" }}>
         <Grid>
           <Grid.Col span={10}>
             <Input
               py={10}
               radius={0}
               placeholder="Input your mates"
-              value={mate}
-              onChange={(event) => setMate(event.currentTarget.value)}
+              value={friendName}
+              onChange={(event) => setFriendName(event.currentTarget.value)}
               rightSectionPointerEvents="all"
               rightSection={
                 <CloseButton
                   aria-label="Clear input"
-                  onClick={() => setMate('')}
-                  style={{ display: mate ? undefined : 'none' }}
+                  onClick={() => setFriendName("")}
+                  style={{ display: friendName ? undefined : "none" }}
                 />
               }
             />
@@ -220,129 +332,130 @@ export default function Home() {
           <Grid.Col span={2}>
             <ActionIcon
               radius={0}
-              style={{ margin: '10px 0', width: '100%', alignItems: 'center' }}
+              style={{ margin: "10px 0", width: "100%", alignItems: "center" }}
               color="#F06418"
               size="36px"
               variant="light"
               aria-label="add-mate"
               disabled={loading}
-              onClick={handleAddMate}
+              onClick={handleAddFriend}
             >
-              {loading ? <Loader size="xs" color="#F06418" /> : <IconPlus stroke={1.5} />}
+              {loading ? (
+                <Loader size="xs" color="#F06418" />
+              ) : (
+                <IconPlus stroke={1.5} />
+              )}
             </ActionIcon>
           </Grid.Col>
         </Grid>
       </Box>
-      <Group mt={10} gap="xs" style={{ padding: '10px 0' }}>
-        {
-          mateItems?.length > 0 ?
-            mateItems
-            :
-            null
-        }
+      <Group gap="xs" style={{ padding: "10px 0" }}>
+        {friendItems?.length > 0 ? friendItems : null}
       </Group>
       <Box>
-        <Box mt={bills.length > 0 ? 20 : 0} style={{ padding: '10px 0' }}>
+        <Box mt={user?.bills.length > 0 ? 20 : 0} style={{ padding: "10px 0" }}>
           <Box pos="relative">
-            <LoadingOverlay visible={billLoading} zIndex={1000} loaderProps={{size: 'sm', color: '#F06418'}} overlayProps={{ radius: "sm", blur: 2 }} />
-            {
-              bills?.length > 0 ?
-                bills?.map((b) => {
-                  return (
-                    <React.Fragment key={b.id}>
-                      <Grid mb={20}>
-                        <Grid.Col span={12} pb={0}>
-                          <Text fz={18} fw={600} c="#161617">{b.name}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={4} m="auto 0" pt={0}>
-                          <Text fz={14} fw={400} c="dimmed">{`Rp ${b.price.toLocaleString()}`}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={2} m="auto 0" pt={0}>
-                          <Text fz={12} fw={600} c="#161617" >{`x${b.qty}`}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={4} pt={0} align="right" m="auto 0">
-                          <Text fz={14} fw={600} c="#161617">{`Rp ${(b.price * b.qty).toLocaleString()}`}</Text>
-                        </Grid.Col>
-                        <Grid.Col span={2} align="right" m="auto 0">
-                          <ActionIcon
-                            radius={0}
-                            color="#F06418"
-                            size="36px"
-                            variant="light"
-                            aria-label="add-mate"
-                            onClick={() => {
-                              editForm.setValues({ id: b.id, name: b.name, qty: b.qty, price: b.price })
-                              setBillID(b.id)
-                              editOpen()
-                            }}
-                          >
-                            <IconPencil stroke={1.5} />
-                          </ActionIcon>
-                        </Grid.Col>
-                      </Grid>
-                      <Divider mb={15} />
-                    </React.Fragment>
-                  )
-                })
-              :
-              <Text fw={600} mb={40} mt={20} ta='center' c='dimmed'>Please add bill to calculate</Text>
-            }
-          </Box>
-          <Box>
-            <Group>
-              <Title order={5} c="#161617">Transfer to:</Title>
-              <ActionIcon
-                onClick={() => bankOpen()}
-                radius={0}
-                size="sm"
-                color="#F06418"
-                variant="light"
-              >
-                <IconPlus style={{ padding: '2px' }} />
-              </ActionIcon>
-            </Group>
-            {
-              user?.user_banks?.length > 0 ?
-                user?.user_banks?.map((b) => {
-                  return (
-                    <Box
-                      key={b?.id}
-                      mt={10}
-                      p={10}
-                      style={{ width: '100%', border: '1px solid #eee' }}
-                    >
-                      <Group justify="space-between">
-                        <Box>
-                          <Text fz={12} fw={800}>{b.bank_account}</Text>
-                          <Group gap={5}>
-                            <Text fz={12}>{`${b.bank_name} - ${b.bank_number}`}</Text>
-                          </Group>
-                        </Box>
-                        <ActionIcon onClick={() => onDeleteBank(b.id)} radius={0} color="#F06418" variant="light"><IconMinus style={{ padding: '4px' }} /></ActionIcon>
-                      </Group>
-                    </Box>
-                  )
-                })
-                :
-                <Box m={15}>
-                  <Text ta='center' c='dimmed'>Please add bank to transfer</Text>
-                </Box>
-            }
+            <LoadingOverlay
+              visible={loading}
+              zIndex={1000}
+              loaderProps={{ size: "sm", color: "#F06418" }}
+              overlayProps={{ radius: "sm", blur: 2 }}
+            />
+            {user?.bills?.length > 0 ? (
+              user?.bills?.map((b) => {
+                return (
+                  <React.Fragment key={b.id}>
+                    <Grid mb={20}>
+                      <Grid.Col span={12} pb={0}>
+                        <Text fz={18} fw={600} c="#161617">
+                          {b.name}
+                        </Text>
+                      </Grid.Col>
+                      <Grid.Col span={4} m="auto 0" pt={0}>
+                        <Text
+                          fz={14}
+                          fw={400}
+                          c="dimmed"
+                        >{`Rp ${b.price.toLocaleString()}`}</Text>
+                      </Grid.Col>
+                      <Grid.Col span={2} m="auto 0" pt={0}>
+                        <Text fz={12} fw={600} c="#161617">{`x${b.qty}`}</Text>
+                      </Grid.Col>
+                      <Grid.Col span={4} pt={0} align="right" m="auto 0">
+                        <Text fz={14} fw={600} c="#161617">{`Rp ${(
+                          b.price * b.qty
+                        ).toLocaleString()}`}</Text>
+                      </Grid.Col>
+                      <Grid.Col span={2} align="right" m="auto 0">
+                        <ActionIcon
+                          radius={0}
+                          color="#F06418"
+                          size="36px"
+                          variant="light"
+                          aria-label="add-mate"
+                          onClick={() => {
+                            editForm.setValues({
+                              id: b.id,
+                              name: b.name,
+                              qty: b.qty,
+                              price: b.price,
+                              createdAt: b.createdAt,
+                            });
+                            setBillID(b.id);
+                            editOpen();
+                          }}
+                        >
+                          <IconPencil stroke={1.5} />
+                        </ActionIcon>
+                      </Grid.Col>
+                    </Grid>
+                    <Divider mb={15} />
+                  </React.Fragment>
+                );
+              })
+            ) : (
+              <Text fw={600} mb={40} mt={20} ta="center" c="dimmed">
+                Please add bill to calculate
+              </Text>
+            )}
           </Box>
           <Group grow>
-            <Button onClick={open} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Add Bill</Button>
-            <Button onClick={handleContinue} disabled={!user?.id || user?.user_banks?.length < 1 ? true : false} radius={0} mt={15} size="sm" color="#F06418" variant="light">Continue</Button>
+            <Button
+              onClick={open}
+              radius={0}
+              mt={15}
+              size="sm"
+              color="#F06418"
+              variant="filled"
+            >
+              Add Bill
+            </Button>
+            <Button
+              onClick={handleContinue}
+              disabled={
+                !user?.id || user?.user_banks?.length < 1 ? true : false
+              }
+              radius={0}
+              mt={15}
+              size="sm"
+              color="#F06418"
+              variant="light"
+            >
+              Continue
+            </Button>
           </Group>
         </Box>
         <Drawer
-          overlayProps={{ color: '#f2f2f2', backgroundOpacity: 0.5, blur: 4 }}
+          overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
           opened={nameOpened}
           onClose={nameClose}
           position="bottom"
           withCloseButton={false}
         >
-          <Box style={{ maxWidth: '480px', margin: '0 auto' }}>
-            <Title order={3} mb={20}>What is your name?</Title>
+          <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
+            <Title order={3} mb={20}>
+              What is your name?
+            </Title>
             <form onSubmit={userForm.onSubmit(handleRegister)}>
               <Text>Name</Text>
               <Input
@@ -350,8 +463,7 @@ export default function Home() {
                 radius={0}
                 placeholder="Your name"
                 required
-                {...userForm.getInputProps('name')}
-
+                {...userForm.getInputProps("name")}
               />
               <Text>Email</Text>
               <Input
@@ -359,7 +471,31 @@ export default function Home() {
                 radius={0}
                 placeholder="Your email"
                 required
-                {...userForm.getInputProps('email')}
+                {...userForm.getInputProps("email")}
+              />
+              <Text>Bank</Text>
+              <Input
+                pb={10}
+                radius={0}
+                placeholder="Bank"
+                required
+                {...userForm.getInputProps("bank")}
+              />
+              <Text>Bank Account Name</Text>
+              <Input
+                pb={10}
+                radius={0}
+                placeholder="Bank Account Name"
+                required
+                {...userForm.getInputProps("bankAccountName")}
+              />
+              <Text>Bank Number</Text>
+              <Input
+                pb={10}
+                radius={0}
+                placeholder="Bank Number"
+                required
+                {...userForm.getInputProps("bankNumber")}
               />
               <Button
                 radius={0}
@@ -377,14 +513,16 @@ export default function Home() {
           </Box>
         </Drawer>
         <Drawer
-          overlayProps={{ color: '#f2f2f2', backgroundOpacity: 0.5, blur: 4 }}
+          overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
           opened={opened}
           onClose={close}
           position="bottom"
           withCloseButton={false}
         >
-          <Box style={{ maxWidth: '480px', margin: '0 auto' }}>
-            <Title order={3} mb={20}>Add Bill</Title>
+          <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
+            <Title order={3} mb={20}>
+              Add Bill
+            </Title>
             <form onSubmit={form.onSubmit(handleAddBill)}>
               <Text>Item Name</Text>
               <Input
@@ -392,16 +530,16 @@ export default function Home() {
                 radius={0}
                 placeholder="Item name"
                 required
-                {...form.getInputProps('name')}
+                {...form.getInputProps("name")}
               />
-              <Group grow style={{ alignItems: 'flex-start' }}>
+              <Group grow style={{ alignItems: "flex-start" }}>
                 <Box>
                   <Text>Quantity</Text>
                   <NumberInput
                     radius={0}
                     placeholder="Quantity"
                     required
-                    {...form.getInputProps('qty')}
+                    {...form.getInputProps("qty")}
                   />
                 </Box>
                 <Box>
@@ -410,7 +548,7 @@ export default function Home() {
                     radius={0}
                     placeholder="Price"
                     required
-                    {...form.getInputProps('price')}
+                    {...form.getInputProps("price")}
                   />
                 </Box>
               </Group>
@@ -430,14 +568,16 @@ export default function Home() {
           </Box>
         </Drawer>
         <Drawer
-          overlayProps={{ color: '#f2f2f2', backgroundOpacity: 0.5, blur: 4 }}
+          overlayProps={{ color: "#f2f2f2", backgroundOpacity: 0.5, blur: 4 }}
           opened={editOpened}
           onClose={editClose}
           position="bottom"
           withCloseButton={false}
         >
-          <Box style={{ maxWidth: '480px', margin: '0 auto' }}>
-            <Title order={3} mb={20}>Update Bill</Title>
+          <Box style={{ maxWidth: "480px", margin: "0 auto" }}>
+            <Title order={3} mb={20}>
+              Update Bill
+            </Title>
             <form onSubmit={editForm.onSubmit(handleUpdate)}>
               <Text>Item Name</Text>
               <Input
@@ -445,16 +585,16 @@ export default function Home() {
                 radius={0}
                 placeholder="Item name"
                 required
-                {...editForm.getInputProps('name')}
+                {...editForm.getInputProps("name")}
               />
-              <Group grow style={{ alignItems: 'flex-start' }}>
+              <Group grow style={{ alignItems: "flex-start" }}>
                 <Box>
                   <Text>Quantity</Text>
                   <NumberInput
                     radius={0}
                     placeholder="Quantity"
                     required
-                    {...editForm.getInputProps('qty')}
+                    {...editForm.getInputProps("qty")}
                   />
                 </Box>
                 <Box>
@@ -463,7 +603,7 @@ export default function Home() {
                     radius={0}
                     placeholder="Price"
                     required
-                    {...editForm.getInputProps('price')}
+                    {...editForm.getInputProps("price")}
                   />
                 </Box>
               </Group>
@@ -486,9 +626,9 @@ export default function Home() {
                   color="#F06418"
                   variant="light"
                   onClick={() => {
-                    onDelete(billID)
-                    editClose()
-                    setBillID('')
+                    handleDeleteBill(billID);
+                    editClose();
+                    setBillID("");
                   }}
                 >
                   Delete
@@ -497,57 +637,7 @@ export default function Home() {
             </form>
           </Box>
         </Drawer>
-        <Drawer
-          overlayProps={{ color: '#f2f2f2', backgroundOpacity: 0.5, blur: 4 }}
-          opened={bankOpened}
-          onClose={bankClose}
-          position="bottom"
-          withCloseButton={false}
-        >
-          <Box style={{ maxWidth: '480px', margin: '0 auto' }}>
-            <Title order={3} mb={20}>Create Bank</Title>
-            <form onSubmit={bankForm.onSubmit(handleCreateBank)}>
-              <Text>Bank Name</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Bank name"
-                required
-                {...bankForm.getInputProps('bank_name')}
-
-              />
-              <Text>Bank Account</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Bank Account"
-                required
-                {...bankForm.getInputProps('bank_account')}
-              />
-              <Text>Bank Number</Text>
-              <Input
-                pb={10}
-                radius={0}
-                placeholder="Bank Number"
-                required
-                {...bankForm.getInputProps('bank_number')}
-              />
-              <Button
-                radius={0}
-                mt={15}
-                size="sm"
-                fullWidth
-                color="#F06418"
-                variant="filled"
-                loading={loading}
-                type="submit"
-              >
-                Submit
-              </Button>
-            </form>
-          </Box>
-        </Drawer>
-      </Box >
-    </Box >
-  )
+      </Box>
+    </Box>
+  );
 }

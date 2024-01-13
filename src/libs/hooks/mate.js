@@ -25,7 +25,7 @@ export const useMates = () => {
       try {
         const { data: res } = await api.post("/v1/users", data);
         if (res.message === "success") {
-          setCookie("userID", res?.data, { path: "/" });
+          // setCookie("userID", res?.data, { path: "/" });
           setUserID(res?.data);
           mutate(`/v1/users/${res?.data}`);
           notifications.show({

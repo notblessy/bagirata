@@ -30,6 +30,7 @@ function generateID() {
 
 export default function Home() {
   const navigate = useNavigate();
+  // eslint-disable-next-line no-unused-vars
   const [cookies, setCookie, removeCookie] = useCookies(["session"]);
 
   const [opened, { open, close }] = useDisclosure(false);
@@ -38,6 +39,7 @@ export default function Home() {
   const [editOpened, { open: editOpen, close: editClose }] =
     useDisclosure(false);
 
+  // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -136,7 +138,7 @@ export default function Home() {
   const form = useForm({
     initialValues: {
       name: "",
-      owner_id: "",
+      ownerID: "",
       qty: 0,
       price: 0,
     },
@@ -151,7 +153,7 @@ export default function Home() {
   const editForm = useForm({
     initialValues: {
       id: "",
-      owner_id: "",
+      ownerID: "",
       name: "",
       qty: 0,
       price: 0,
@@ -208,6 +210,7 @@ export default function Home() {
         bankAccountName: payload.bankAccountName,
         bankNumber: payload.bankNumber,
       },
+      createdAt: new Date()
     };
 
     setUser(data);
@@ -224,9 +227,11 @@ export default function Home() {
   const handleAddBill = (bill) => {
     bill.id = generateID();
 
-    user?.bills?.splice(user?.bills?.length, 0, {
+    user.bills = user?.bills || [];
+
+    user?.bills.splice(user?.bills?.length, 0, {
       id: bill.id,
-      owner_id: user.id,
+      ownerID: user.id,
       name: bill.name,
       qty: +bill.qty,
       price: +bill.price,
@@ -251,7 +256,7 @@ export default function Home() {
 
       user?.bills?.splice(user?.bills?.length, 0, {
         id: bill.id,
-        owner_id: user.id,
+        ownerID: user.id,
         name: bill.name,
         qty: +bill.qty,
         price: +bill.price,
@@ -353,7 +358,7 @@ export default function Home() {
         {friendItems?.length > 0 ? friendItems : null}
       </Group>
       <Box>
-        <Box mt={user?.bills.length > 0 ? 20 : 0} style={{ padding: "10px 0" }}>
+        <Box mt={user?.bills?.length > 0 ? 20 : 0} style={{ padding: "10px 0" }}>
           <Box pos="relative">
             <LoadingOverlay
               visible={loading}
@@ -376,7 +381,7 @@ export default function Home() {
                           fz={14}
                           fw={400}
                           c="dimmed"
-                        >{`Rp ${b.price.toLocaleString()}`}</Text>
+                        >{`Rp ${b?.price?.toLocaleString()}`}</Text>
                       </Grid.Col>
                       <Grid.Col span={2} m="auto 0" pt={0}>
                         <Text fz={12} fw={600} c="#161617">{`x${b.qty}`}</Text>

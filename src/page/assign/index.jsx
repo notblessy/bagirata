@@ -1,34 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { ActionIcon, Avatar, Box, Button, Divider, Drawer, Grid, Group, LoadingOverlay, Text, Title, UnstyledButton } from "@mantine/core";
 import { IconMinus, IconPlus, IconReceiptOff } from "@tabler/icons-react";
-import { useBills } from "../../libs/hooks/bill";
-import { useMates } from "../../libs/hooks/mate";
 import { useNavigate } from "react-router-dom";
-import { useSplit } from "../../libs/hooks/split";
 import { useDisclosure } from "@mantine/hooks";
+import { useCookies } from "react-cookie";
+import { notifications } from "@mantine/notifications";
 
 export default function Assign() {
   const navigate = useNavigate();
+  // eslint-disable-next-line no-unused-vars
+  const [cookies, setCookie, removeCookie] = useCookies(["session"]);
 
-  const { data: user } = useMates();
+  const userID = cookies?.userID;
 
-  const [mate, setMate] = useState();
+  // eslint-disable-next-line no-unused-vars
+  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState(null);
+
+  const [friend, setFriend] = useState();
 
   useEffect(() => {
-    if (user) {
-      setMate(user?.mates[0])
+    const userData = localStorage.getItem(userID);
+    if (userData) {
+      const parsedUser = JSON.parse(userData)
+      setUser(parsedUser);
     }
-  }, [user])
-
+    
+  }, [userID, user]);
 
   const [continueOpened, { open: continueOpen, close: continueClose }] = useDisclosure(false);
-  
-  const mateID = mate?.user_detail?.id ? mate?.user_detail?.id : ''
-  const { data: bills, onAddShare, onBulkAddShare, loading } = useBills({ ownerID: user?.id, mateID: mateID })
-  const {onAdd: onCalculate} = useSplit('')
 
-  const mateItems = user?.mates?.map((m) => {
-    const splitted = m?.user_detail.name.split(" ")
+  const friendItems = user?.friends?.map((f) => {
+    const splitted = f?.name.split(" ")
 
     let acr = ''
     if (splitted.length == 1) {
@@ -43,14 +46,14 @@ export default function Assign() {
 
     return (
       <UnstyledButton
-        key={m.id}
+        key={f.id}
         onClick={() => {
-          if (mate?.user_id === m?.user_id) {
-            setMate(null)
+          if (friend?.id === f?.id) {
+            setFriend(null)
             return
           }
 
-          setMate({ ...m, me: false })
+          setFriend(f)
         }}
         style={{ position: 'relative' }}
       >
@@ -58,7 +61,7 @@ export default function Assign() {
           size={45}
           src={null}
           color="#F06418"
-          variant={mate?.user_detail?.id === m?.user_detail?.id ? "filled" : "light"}
+          variant={friend?.id === f?.id ? "filled" : "light"}
         >
           {acr}
         </Avatar>
@@ -66,11 +69,7 @@ export default function Assign() {
     )
   })
 
-  const isAbleToComplete = bills?.some(b => (b.qty !== b.taken) && !b.split_payment)
-
-  const handleSplit = () => {
-    onCalculate({owner_id: user?.id})
-  }
+  const isAbleToComplete = user?.bills?.some(b => (b.qty !== b.taken) && !b.splitPayment)
 
   return (
     <Box pos="relative">
@@ -80,28 +79,36 @@ export default function Assign() {
         <Title order={1} c="#161617">Assign Mates</Title>
         <Group mt={10} gap="xs" style={{ padding: '10px 0' }}>
           {
-            mateItems
+            friendItems
           }
         </Group>
         <Box>
-          <Box mt={bills.length > 0 ? 20 : 0} style={{ padding: '10px 0' }}>
+          <Box mt={user?.bills?.length > 0 ? 20 : 0} style={{ padding: '10px 0' }}>
             {
-              mate?.id ?
-                bills?.length > 0 ?
-                  bills?.map((b) => {
-                    const takenQty = b?.shares ? b.shares?.reduce((acc, value) => {
+              friend?.id ?
+                  user?.bills?.map((b) => {
+                    const totalTakenQty = b?.shares ? b.shares?.reduce((acc, value) => {
                       acc += value.qty
+                      
+                      return acc
+                    }, 0) : 0
+
+                    const takenQty = b?.shares ? b.shares?.reduce((acc, value) => {
+                      if (value.ownerID === friend.id) {
+                        acc += value.qty
+                      }
+                      
                       return acc
                     }, 0) : 0
 
                     const disableSubButton = () => {
-                      if (takenQty === 0 || b?.split_payment) {
+                      if (takenQty === 0 || b?.splitPayment) {
                         return true
                       }
                     }
 
                     const disableAddButton = () => {
-                      if (b.taken >= b.qty || b?.split_payment) {
+                      if ((b.taken && b.taken >= b.qty) || b?.splitPayment) {
                         return true
                       }
 
@@ -109,7 +116,7 @@ export default function Assign() {
                     }
 
                     const disableSplitButton = () => {
-                      if (b.taken > 0) {
+                      if (b.taken && b.taken > 0) {
                         return true
                       }
 
@@ -117,7 +124,10 @@ export default function Assign() {
                     }
 
                     const actualPrice = b?.shares ? b.shares?.reduce((acc, value) => {
-                      acc += value.price
+                      if (friend.id === value.ownerID) {
+                        acc += value.price
+                      }
+
                       return acc
                     }, 0) : 0
 
@@ -137,23 +147,57 @@ export default function Assign() {
                                 radius={0}
                                 color="#F06418"
                                 size="25px"
-                                variant={b?.split_payment ? "filled" : "light"}
-                                aria-label="bulk-share"
+                                variant={b?.splitPayment ? "filled" : "light"}
+                                aria-label="split-share"
                                 onClick={() => {
-                                  const shares = {
-                                    type: "BULK",
-                                    owner_id: user?.id,
-                                    bill_id: b.id,
-                                    mates: user?.mates?.map((m) => {
-                                      return {
-                                        mate_id: m?.user_detail?.id,
-                                        mate_name: m?.user_detail?.name,
-                                      }
-                                    }),
-                                    split_payment: true
+                                  if (b?.taken > 0) {
+                                    notifications.show({
+                                      title: "Error",
+                                      message: "Cannot split payment when there is a taken item",
+                                      color: "red",
+                                    });
                                   }
 
-                                  onBulkAddShare(shares)
+                                  if (b.splitPayment) {
+                                    const updatedFriends = user?.friends?.map((u) => {
+                                      return {
+                                        ...u,
+                                        items: []
+                                      }
+                                    })
+
+                                    user.friends = updatedFriends
+                                  } else {
+                                    const item = [{
+                                      billID: b.id,
+                                      billName: b.name,
+                                      price: +b.price,
+                                      qty: 1,
+                                      subTotal: (+b.price * +b.qty ) / user.friend.length,
+                                      createdAt: new Date(),
+                                    }]
+
+                                    const updatedFriends = user?.friends?.map((u) => {
+                                      return {
+                                        ...u,
+                                        items: item,
+                                      }
+                                    })
+
+                                    user.friends = updatedFriends
+                                  }
+
+                                  b.splitPayment = b.splitPayment ? false : true
+
+                                  user.bills = user?.bills ? user?.bills.filter((bill) => bill.id !== b.id) : []
+                                  user.bills.push(b)
+                                  user?.bills?.sort(
+                                    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+                                  );
+                              
+                                  setUser(user)
+                                  const jsonData = JSON.stringify(user);
+                                  localStorage.setItem(user.id, jsonData);
                                 }}
                               >
                                 <IconReceiptOff style={{ padding: '4px' }} />
@@ -166,23 +210,63 @@ export default function Assign() {
                                 variant="light"
                                 aria-label="add-mate"
                                 onClick={() => {
-                                  const share = {
-                                    type: "SUB",
-                                    owner_id: user?.id,
-                                    bill_id: b.id,
-                                    mate_id: mate?.user_detail?.id,
-                                    mate_name: mate?.user_detail?.name,
-                                    qty: 1,
+                                  const payload = {
+                                    ownerID: friend.id,
+                                    billID: b.id,
+                                    friendName: friend.name,
                                     price: +b.price,
-                                    split_payment: false
+                                    qty: takenQty < 0 ? takenQty - 1 : 0,
+                                    splitPayment: false,
+                                    createdAt: new Date(),
                                   }
 
-                                  onAddShare(share)
+                                  b.taken = totalTakenQty > 0 ? totalTakenQty - 1 : 0
+
+                                  b.shares = b.shares ? b.shares : []
+                                  b.shares = b.shares ? b.shares.filter((s) => s.ownerID !== friend.id) : []
+                                  if (payload.qty > 0) {
+                                    b?.shares?.push(payload)
+                                  }
+
+                                  user.bills = user?.bills ? user?.bills.filter((bill) => bill.id !== b.id) : []
+                                  user?.bills?.push(b)
+                                  user?.bills?.sort(
+                                    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+                                  );
+
+                                  const item = {
+                                    billID: b.id,
+                                    billName: b.name,
+                                    price: +b.price,
+                                    qty: +payload.qty,
+                                    subTotal: +payload.qty * +b.price,
+                                    createdAt: new Date(),
+                                  }
+
+                                  friend.items = friend?.items ? friend?.items : []
+                                  friend.items = friend?.items ? friend?.items.filter((i) => i.billID !== b.id) : []
+                                  if (item.qty > 0) {
+                                    friend.items.push(item)
+                                  }
+
+                                  user.friends = user?.friends ? user.friends.filter((f) => f.id !== friend.id) : []
+                                  user.friends.push(friend)
+                                  user.friends.sort((a, b) => {
+                                    if (b.me - a.me !== 0) {
+                                      return b.me - a.me;
+                                    }
+                                
+                                    return new Date(a.createdAt) - new Date(b.createdAt);
+                                  });
+                              
+                                  setUser(user)
+                                  const jsonData = JSON.stringify(user);
+                                  localStorage.setItem(user.id, jsonData);
                                 }}
                               >
                                 <IconMinus style={{ padding: '4px' }} />
                               </ActionIcon>
-                              <Text fz={12} fw={600} c="#161617">{b?.split_payment ? "split": `x${takenQty}`}</Text>
+                              <Text fz={12} fw={600} c="#161617">{b?.splitPayment ? "split": `x${takenQty}`}</Text>
                               <ActionIcon
                                 disabled={disableAddButton()}
                                 radius={0}
@@ -191,17 +275,57 @@ export default function Assign() {
                                 variant="light"
                                 aria-label="add-mate"
                                 onClick={() => {
-                                  const share = {
-                                    owner_id: user?.id,
-                                    bill_id: b.id,
-                                    mate_id: mate?.user_detail?.id,
-                                    mate_name: mate?.user_detail?.name,
-                                    qty: 1,
+                                  const payload = {
+                                    ownerID: friend.id,
+                                    billID: b.id,
+                                    friendName: friend.name,
                                     price: +b.price,
-                                    split_payment: false
+                                    qty: takenQty < b.qty ? takenQty + 1 : 0,
+                                    splitPayment: false,
+                                    createdAt: new Date(),
                                   }
 
-                                  onAddShare(share)
+                                  b.taken = totalTakenQty < b.qty ? totalTakenQty + 1 : totalTakenQty
+
+                                  b.shares = b?.shares ? b?.shares.filter((s) => s.ownerID !== friend.id) : []
+                                  if (payload.qty > 0) {
+                                    b?.shares?.push(payload)
+                                  }
+
+                                  user.bills = user?.bills ? user?.bills.filter((bill) => bill.id !== b.id) : []
+                                  user?.bills?.push(b)
+                                  user?.bills?.sort(
+                                    (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+                                  );
+
+                                  const item = {
+                                    billID: b.id,
+                                    billName: b.name,
+                                    price: +b.price,
+                                    qty: +payload.qty,
+                                    subTotal: +payload.qty * +b.price,
+                                    createdAt: new Date(),
+                                  }
+
+                                  friend.items = friend?.items ? friend?.items : []
+                                  friend.items = friend?.items ? friend?.items.filter((i) => i.billID !== b.id) : []
+                                  if (item.qty > 0) {
+                                    friend.items.push(item)
+                                  }
+                                  
+                                  user.friends = user?.friends ? user?.friends.filter((f) => f.id !== friend.id) : []
+                                  user.friends.push(friend)
+                                  user.friends.sort((a, b) => {
+                                    if (b.me - a.me !== 0) {
+                                      return b.me - a.me;
+                                    }
+                                
+                                    return new Date(a.createdAt) - new Date(b.createdAt);
+                                  });
+                              
+                                  setUser(user)
+                                  const jsonData = JSON.stringify(user);
+                                  localStorage.setItem(user.id, jsonData);
                                 }}
                               >
                                 <IconPlus style={{ padding: '4px' }} />
@@ -213,14 +337,9 @@ export default function Assign() {
                       </React.Fragment>
                     )
                   })
-                  :
-                  <>
-                    <Text my={15} fz={16} fw={600} c="dimmed" ta="center">Empty Bill</Text>
-                    <Divider />
-                  </>
                 :
                 <>
-                  <Text my={15} fz={16} fw={600} c="dimmed" ta="center">Mate not selected</Text>
+                  <Text my={15} fz={16} fw={600} c="dimmed" ta="center">Friend not selected</Text>
                   <Divider />
                 </>
             }
@@ -241,7 +360,7 @@ export default function Assign() {
               <Text mb={10} fz={16} fw={400} c="dimmed">{"You won't be able to edit the data after finishing it"}</Text>
               <Group grow>
                 <Button onClick={() => continueClose()} radius={0} mt={15} size="sm" color="#F06418" variant="filled">Cancel</Button>
-                <Button onClick={handleSplit} disabled={!user?.id || isAbleToComplete ? true : false} radius={0} mt={15} size="sm" color="#F06418" variant="light">Okay</Button>
+                <Button onClick={() => navigate(`/splits`)} disabled={!user?.id || isAbleToComplete ? true : false} radius={0} mt={15} size="sm" color="#F06418" variant="light">Okay</Button>
               </Group>
             </Box>
           </Drawer>

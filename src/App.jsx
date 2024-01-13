@@ -11,7 +11,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/:idBill" element={<Assign />} />
-        <Route path="splits/:splitID" element={<Split />} />
+        <Route path="/splits" element={<Split />} />
       </Routes>
     </AppContainer>
   )

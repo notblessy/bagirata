@@ -9,8 +9,9 @@ function App() {
     <AppContainer>
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/:idBill" element={<Assign />} />
+        <Route path="/assign" element={<Assign />} />
         <Route path="/splits" element={<Split />} />
+        <Route path="/splits/:id" element={<Split />} />
       </Routes>
     </AppContainer>
   );

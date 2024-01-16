@@ -285,7 +285,7 @@ export default function Home() {
   };
 
   const handleContinue = () => {
-    navigate(user?.id);
+    navigate("/assign");
   };
 
   return (

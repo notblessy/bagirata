@@ -1,10 +1,10 @@
 const base = {
-  COOKIE_NAME: "kasirku",
+  COOKIE_NAME: "bagirata",
   LAST_VISIT: "last-visit",
 };
 
 const development = (function () {
-  let apiHost = "http://localhost:8181";
+  let apiHost = "http://localhost:8000";
 
   if (import.meta.env.VITE_APP_API_HOST) {
     apiHost = import.meta.env.VITE_APP_API_HOST;

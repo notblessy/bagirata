@@ -12,42 +12,25 @@ import {
 import { format } from "date-fns";
 import { notifications } from "@mantine/notifications";
 import { IconCopy } from "@tabler/icons-react";
-import { useCookies } from "react-cookie";
+import { useParams } from "react-router-dom";
+import { useSplit } from "../../libs/hooks/split";
 
 export default function Split() {
   // eslint-disable-next-line no-unused-vars
-  const [cookies, setCookie, removeCookie] = useCookies(["session"]);
+  const { id } = useParams();
 
-  const userID = cookies?.userID;
-
-  // eslint-disable-next-line no-unused-vars
-  const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    const userData = localStorage.getItem(userID);
-    if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-    }
-  }, [userID, user]);
+  const { data: user } = useSplit({ id });
 
   const [copied, setCopied] = useState();
   const [copiedBank, setCopiedBank] = useState();
   const [date, setDate] = useState();
 
   useEffect(() => {
-    const userData = localStorage.getItem(userID);
-    if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-    }
-
     if (user?.createdAt) {
       const d = format(new Date(user?.createdAt), "dd MMM yyyy");
       setDate(d);
     }
-  }, [user, userID]);
+  }, [user]);
 
   const friendItems = user?.friends?.map((f) => {
     const grandTotal = f?.items.reduce((prev, i) => {
@@ -160,12 +143,12 @@ export default function Split() {
             }}
           >
             <Text fz={12} fw={800}>
-              {user?.bank.bankAccountName}
+              {user?.bank?.bankAccountName}
             </Text>
             <Group gap={5}>
               <Text
                 fz={12}
-              >{`${user?.bank.bank} - ${user?.bank.bankNumber}`}</Text>
+              >{`${user?.bank?.bank} - ${user?.bank?.bankNumber}`}</Text>
               <IconCopy size={15} />
             </Group>
           </UnstyledButton>

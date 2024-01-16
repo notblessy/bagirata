@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useDisclosure } from "@mantine/hooks";
 import { useCookies } from "react-cookie";
 import { notifications } from "@mantine/notifications";
+import { useSplit } from "../../libs/hooks/split";
 
 export default function Assign() {
   const navigate = useNavigate();
@@ -31,6 +32,8 @@ export default function Assign() {
   const [user, setUser] = useState(null);
 
   const [friend, setFriend] = useState();
+
+  const { onAdd } = useSplit({ id: "" });
 
   useEffect(() => {
     const userData = localStorage.getItem(userID);
@@ -487,7 +490,7 @@ export default function Assign() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={() => navigate(`/splits`)}
+                  onClick={() => onAdd(user)}
                   disabled={!user?.id || isAbleToComplete ? true : false}
                   radius={0}
                   mt={15}

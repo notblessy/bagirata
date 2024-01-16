@@ -9,15 +9,16 @@ export const useSplit = ({ id }) => {
 
   const [loading, setLoading] = useState();
   // eslint-disable-next-line no-unused-vars
-  const pathKey = `v1/splits/${id}`;
+  const pathKey = `/api/splits/${id}`;
   const { data, error, isValidating } = useSWR(pathKey);
 
   const onAdd = useCallback(
-    async ({ owner_id }) => {
+    async (data) => {
       setLoading(true);
       try {
-        const { data: res } = await api.post(`/v1/splits/${owner_id}`);
-        if (res.message === "success") {
+        const { data: res } = await api.post("/api/splits", { data: data });
+        console.log(res);
+        if (res.status === 1) {
           navigate(`/splits/${res?.data?.id}`);
         } else {
           notifications.show({
@@ -40,7 +41,7 @@ export const useSplit = ({ id }) => {
   );
 
   return {
-    data: data,
+    data: data?.data || {},
     onAdd,
     error,
     loading: loading || isValidating,

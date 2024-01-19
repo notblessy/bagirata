@@ -9,14 +9,14 @@ export const useSplit = ({ id }) => {
 
   const [loading, setLoading] = useState();
   // eslint-disable-next-line no-unused-vars
-  const pathKey = `/api/splits/${id}`;
+  const pathKey = `/v1/splits/${id}`;
   const { data, error, isValidating } = useSWR(pathKey);
 
   const onAdd = useCallback(
     async (data) => {
       setLoading(true);
       try {
-        const { data: res } = await api.post("/api/splits", { data: data });
+        const { data: res } = await api.post("/v1/splits", { data: data });
         console.log(res);
         if (res.status === 1) {
           navigate(`/splits/${res?.data?.id}`);

@@ -9,9 +9,7 @@ export const instance = axios.create({
     Accept: "application/json, text/plain, */*",
     "Content-Type": "application/json; charset=utf-8",
   },
-  validateStatus: function (status) {
-    return status < 505; // Resolve only if the status code is less than 500
-  },
+  validateStatus: null
 });
 
 export const fetcher = async (url) => {

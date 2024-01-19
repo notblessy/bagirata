@@ -8,7 +8,6 @@ import {
   Drawer,
   Grid,
   Group,
-  LoadingOverlay,
   Text,
   Title,
   UnstyledButton,
@@ -28,12 +27,11 @@ export default function Assign() {
   const userID = cookies?.userID;
 
   // eslint-disable-next-line no-unused-vars
-  const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
 
   const [friend, setFriend] = useState();
 
-  const { onAdd } = useSplit({ id: "" });
+  const { onAdd, loading } = useSplit({ id: "" });
 
   useEffect(() => {
     const userData = localStorage.getItem(userID);
@@ -93,17 +91,12 @@ export default function Assign() {
 
   return (
     <Box pos="relative">
-      <LoadingOverlay
-        visible={loading}
-        zIndex={1000}
-        overlayProps={{ radius: "sm", blur: 2 }}
-      />
       <Box mt={30} style={{ padding: "10px 20px" }}>
         <Text c="#F06418" fz={12} fw={600}>
           Bagi Rata
         </Text>
         <Title order={1} c="#161617">
-          Assign Mates
+          Assign Friend
         </Title>
         <Group mt={10} gap="xs" style={{ padding: "10px 0" }}>
           {friendItems}
@@ -174,11 +167,11 @@ export default function Assign() {
                         </Text>
                       </Grid.Col>
                       <Grid.Col span={6} m="auto 0" pt={0}>
-                        <Text
-                          fz={14}
-                          fw={400}
-                          c="dimmed"
-                        >{`Rp ${actualPrice.toLocaleString()}`}</Text>
+                        <Text fz={14} fw={400} c="dimmed">{`Rp ${
+                          b?.splitPayment
+                            ? (b.price / user?.friends?.length).toLocaleString()
+                            : actualPrice.toLocaleString()
+                        }`}</Text>
                       </Grid.Col>
                       <Grid.Col span={6} m="auto 0" pt={0}>
                         <Group justify="right">
@@ -491,7 +484,10 @@ export default function Assign() {
                 </Button>
                 <Button
                   onClick={() => onAdd(user)}
-                  disabled={!user?.id || isAbleToComplete ? true : false}
+                  loading={loading}
+                  disabled={
+                    !user?.id || isAbleToComplete || loading ? true : false
+                  }
                   radius={0}
                   mt={15}
                   size="sm"

@@ -4,7 +4,7 @@ const base = {
 };
 
 const development = (function () {
-  let apiHost = "http://localhost:8000";
+  let apiHost = "http://localhost:8181";
 
   if (import.meta.env.VITE_APP_API_HOST) {
     apiHost = import.meta.env.VITE_APP_API_HOST;

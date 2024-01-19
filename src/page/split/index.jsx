@@ -12,13 +12,12 @@ import {
 import { format } from "date-fns";
 import { notifications } from "@mantine/notifications";
 import { IconCopy } from "@tabler/icons-react";
-import { useLocation, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useSplit } from "../../libs/hooks/split";
 
 export default function Split() {
   // eslint-disable-next-line no-unused-vars
   const { id } = useParams();
-  const location = useLocation();
 
   const { data: user } = useSplit({ id });
 
@@ -85,7 +84,7 @@ export default function Split() {
 
   const handleCopyLink = () => {
     navigator.clipboard
-      .writeText(location.href)
+      .writeText(window.location.href)
       .then(() => {
         setCopied(true);
         notifications.show({

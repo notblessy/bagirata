@@ -17,8 +17,8 @@ export const useSplit = ({ id }) => {
       setLoading(true);
       try {
         const { data: res } = await api.post("/v1/splits", { data: data });
-        console.log(res);
-        if (res.status === 1) {
+
+        if (res.message === "success") {
           navigate(`/splits/${res?.data?.id}`);
         } else {
           notifications.show({

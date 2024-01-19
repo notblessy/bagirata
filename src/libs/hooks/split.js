@@ -10,7 +10,7 @@ export const useSplit = ({ id }) => {
   const [loading, setLoading] = useState();
   // eslint-disable-next-line no-unused-vars
   const pathKey = `/v1/splits/${id}`;
-  const { data, error, isValidating } = useSWR(pathKey);
+  const { data, error, isValidating } =  useSWR(id ? pathKey : null);
 
   const onAdd = useCallback(
     async (data) => {

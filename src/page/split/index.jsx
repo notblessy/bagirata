@@ -18,6 +18,7 @@ import { useSplit } from "../../libs/hooks/split";
 export default function Split() {
   // eslint-disable-next-line no-unused-vars
   const { id } = useParams();
+  const url = window.location.href;
 
   const { data: user } = useSplit({ id });
 
@@ -84,7 +85,7 @@ export default function Split() {
 
   const handleCopyLink = () => {
     navigator.clipboard
-      .writeText(window.location.href)
+      .writeText(url)
       .then(() => {
         setCopied(true);
         notifications.show({

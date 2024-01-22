@@ -35,11 +35,14 @@ export default function Assign() {
 
   useEffect(() => {
     const userData = localStorage.getItem(userID);
-    if (userData) {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
+    if (!userData) {
+      navigate("/");
+      return;
     }
-  }, [userID, user]);
+
+    const parsedUser = JSON.parse(userData);
+    setUser(parsedUser);
+  }, [userID, user, navigate]);
 
   const [continueOpened, { open: continueOpen, close: continueClose }] =
     useDisclosure(false);
@@ -88,6 +91,22 @@ export default function Assign() {
   const isAbleToComplete = user?.bills?.some(
     (b) => b.qty !== b.taken && !b.splitPayment
   );
+
+  const handleOkay = () => {
+    onAdd(user);
+
+    const friends = user?.friends?.map((f) => {
+      return {
+        ...f,
+        items: [],
+      };
+    });
+
+    user.friends = friends;
+    user.bills = [];
+
+    localStorage.setItem(user.id, JSON.stringify(user));
+  };
 
   return (
     <Box pos="relative">
@@ -483,7 +502,7 @@ export default function Assign() {
                   Cancel
                 </Button>
                 <Button
-                  onClick={() => onAdd(user)}
+                  onClick={handleOkay}
                   loading={loading}
                   disabled={
                     !user?.id || isAbleToComplete || loading ? true : false

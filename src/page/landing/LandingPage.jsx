@@ -14,7 +14,7 @@ import { IconCheck } from "@tabler/icons-react";
 import { Dots } from "../../components/PatternDots";
 import { useDisclosure } from "@mantine/hooks";
 import { v4 as uuidv4 } from "uuid";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCookies } from "react-cookie";
 import { isEmail, useForm } from "@mantine/form";
 import { useNavigate } from "react-router-dom";
@@ -34,6 +34,14 @@ export default function LandingPage() {
 
   // eslint-disable-next-line no-unused-vars
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const userID = cookies?.userID;
+    const userData = localStorage.getItem(userID);
+    if (userData) {
+      navigate("/create");
+    }
+  }, [cookies, navigate]);
 
   const form = useForm({
     initialValues: {

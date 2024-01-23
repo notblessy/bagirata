@@ -497,7 +497,7 @@ export default function Assign() {
                   mt={15}
                   size="sm"
                   color="#F06418"
-                  variant="filled"
+                  variant="light"
                 >
                   Cancel
                 </Button>
@@ -511,7 +511,7 @@ export default function Assign() {
                   mt={15}
                   size="sm"
                   color="#F06418"
-                  variant="light"
+                  variant="filled"
                 >
                   Okay
                 </Button>

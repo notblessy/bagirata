@@ -60,7 +60,7 @@ export default function Home() {
       setUser(null);
       navigate("/");
     }
-  }, [cookies, user, setUser, navigate]);
+  }, [cookies, navigate]);
 
   const handleDeleteFriend = (id) => {
     user.friends = user?.friends?.filter((f) => f.id !== id);
@@ -135,7 +135,7 @@ export default function Home() {
 
   const editForm = useForm({
     initialValues: {
-      id: "",
+      id: null,
       ownerID: "",
       name: "",
       qty: 0,
@@ -203,8 +203,8 @@ export default function Home() {
   };
 
   const handleUpdate = (payload) => {
-    if (payload.id != "") {
-      user.bills?.filter((b) => b.id !== payload.id);
+    if (payload.id) {
+      user.bills = user.bills?.filter((b) => b.id !== payload.id);
 
       user?.bills.push({
         id: payload.id,
@@ -371,6 +371,7 @@ export default function Home() {
                               editForm.setValues({
                                 id: b.id,
                                 name: b.name,
+                                ownerID: b.ownerID,
                                 qty: b.qty,
                                 price: b.price,
                                 createdAt: b.createdAt,
